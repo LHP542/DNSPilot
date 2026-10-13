@@ -59,7 +59,9 @@ Analyzer an. Ausgeliefert werden nur `DnsPilot.exe` und `nlog.config`
 
 ## Aktueller Stand
 
-**2026-10-13** — 209 Tests grün, Oberfläche per Bildschirmfoto-Modus mit
+**v0.1.0 veröffentlicht, 2026-10-13** (Release mit `DnsPilot-0.1.0-win-x64.zip`,
+CI und Release-Workflow grün; das ZIP von v0.1.0 enthält noch die PDBs, ab
+v0.1.1 nicht mehr) — 209 Tests grün, Oberfläche per Bildschirmfoto-Modus mit
 Demodaten geprüft. Der DNS-Zugriff ist von WMI auf PowerShell umgestellt
 (siehe „Warum PowerShell").
 
