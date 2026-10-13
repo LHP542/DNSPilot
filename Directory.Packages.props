@@ -23,7 +23,7 @@
          (eigene 2.x-Reihe).
          Avalonia.Controls.DataGrid hat eine eigene Patch-Reihe: 12.1.2 setzt
          laut nuspec nur Avalonia 12.1.0 voraus und passt damit zu 12.1.1. -->
-    <PackageVersion Include="Avalonia" Version="12.1.1" />
+    <PackageVersion Include="Avalonia" Version="12.1.4" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.1" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.1" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.1" />
