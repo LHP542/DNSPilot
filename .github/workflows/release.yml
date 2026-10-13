@@ -81,8 +81,12 @@ jobs:
     # Beim manuellen Start (workflow_dispatch ohne Tag) überspringen.
     if: github.ref_type == 'tag'
     steps:
+      # Name fest angeben: ohne ihn landet ein einzelnes Artefakt direkt in
+      # dist/, mehrere dagegen in Unterordnern — der body_path unten ging bei
+      # v0.2.0 deshalb ins Leere (ENOENT, Release ohne Text).
       - uses: actions/download-artifact@v8
         with:
+          name: windows
           path: dist
 
       - name: Version ermitteln
@@ -97,6 +101,6 @@ jobs:
       - name: GitHub-Release anlegen/aktualisieren
         uses: softprops/action-gh-release@v3
         with:
-          body_path: dist/windows/DnsPilot-${{ steps.ver.outputs.v }}-notes.md
+          body_path: dist/DnsPilot-${{ steps.ver.outputs.v }}-notes.md
           files: dist/**/*
           fail_on_unmatched_files: true
