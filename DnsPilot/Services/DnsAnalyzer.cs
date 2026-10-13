@@ -61,6 +61,21 @@ public sealed class DnsAnalyzer(int staleAfterDays)
 
         var reverseZone = inventory.ReverseZoneFor(ip);
         var ptrs = inventory.PtrRecordsAt(ip);
+        bool infrastructure = IsZoneApexOrAdService(record, inventory);
+
+        // Hauptnamen: Namen, auf die ein PTR dieser Adresse zeigt UND die
+        // selbst einen A-Eintrag auf genau diese Adresse haben. Gibt es einen,
+        // ist das DNS für diese Adresse in sich stimmig, und weitere Namen
+        // sind zusätzliche Namen (Alias) — gewollt oder vergessen, das kann
+        // nur ein Mensch entscheiden. Beispiel vom ersten echten Lauf: zwei
+        // statische Namen für einen Server, dessen PTR seinen Computernamen nennt.
+        var aAtIp = inventory.ARecordsAt(ip).Where(a => !IsZoneApexOrAdService(a, inventory)).ToList();
+        var mainNames = ptrs
+            .Where(p => aAtIp.Any(a => SameName(a.OwnerName, p.Data)))
+            .Select(p => p.Data)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        bool isMain = mainNames.Any(n => SameName(n, record.OwnerName));
 
         if (reverseZone is null)
         {
@@ -72,26 +87,42 @@ public sealed class DnsAnalyzer(int staleAfterDays)
             findings.Add(new Finding(FindingKind.MissingPtr, Severity.Warning,
                 $"PTR fehlt in {reverseZone.Name}."));
         }
-        else if (!ptrs.Any(p => SameName(p.Data, record.OwnerName)) && !IsZoneApexOrAdService(record, inventory))
+        else if (!infrastructure && !ptrs.Any(p => SameName(p.Data, record.OwnerName)))
         {
-            findings.Add(Mismatch(record, ptrs,
-                $"PTR zeigt auf {string.Join(", ", ptrs.Select(p => p.Data))}"));
-        }
-
-        if (!IsZoneApexOrAdService(record, inventory))
-        {
-            var others = inventory.ARecordsAt(ip)
-                .Where(a => !SameName(a.OwnerName, record.OwnerName) && !IsZoneApexOrAdService(a, inventory))
-                .Select(a => a.OwnerName)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (others.Count > 0)
+            if (mainNames.Count > 0)
             {
-                findings.Add(new Finding(FindingKind.DuplicateIp, Severity.Warning,
-                    $"Adresse auch vergeben an: {string.Join(", ", others)}."));
+                findings.Add(new Finding(FindingKind.AliasName, Severity.Info,
+                    $"Weiterer Name für {record.Data}; der PTR nennt den Hauptnamen {string.Join(", ", mainNames)}. "
+                    + "Gewollter Alias oder alter Name? Falls nicht mehr gebraucht, löschen."));
+            }
+            else
+            {
+                findings.Add(Mismatch(record, ptrs, $"PTR zeigt auf {string.Join(", ", ptrs.Select(p => p.Data))}"));
             }
         }
+
+        if (infrastructure) return;
+
+        var others = aAtIp
+            .Where(a => !SameName(a.OwnerName, record.OwnerName))
+            .Select(a => a.OwnerName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (others.Count == 0) return;
+
+        if (mainNames.Count == 0)
+        {
+            // Mehrere Namen, aber kein PTR, der einen davon bestätigt: hier ist
+            // unklar, welcher Name der richtige ist.
+            findings.Add(new Finding(FindingKind.DuplicateIp, Severity.Warning,
+                $"Adresse auch vergeben an: {string.Join(", ", others)}."));
+        }
+        else if (isMain)
+        {
+            findings.Add(new Finding(FindingKind.AliasName, Severity.Info,
+                $"Weitere Namen auf dieser Adresse: {string.Join(", ", others)}."));
+        }
+        // Für Nicht-Hauptnamen steht der Hinweis schon oben — nicht doppelt melden.
     }
 
     private void CheckPtr(DnsInventory inventory, DnsRecord record, DateTime nowUtc, List<Finding> findings)

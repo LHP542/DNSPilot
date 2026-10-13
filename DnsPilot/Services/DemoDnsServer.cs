@@ -55,10 +55,11 @@ public sealed class DemoDnsServer : IDnsServer
             A("drucker-og1", "10.10.2.32"),
             // Fehlender PTR
             A("kamera-hof", "10.10.2.40"),
-            // Doppelte Adresse
+            // Doppelte Adresse ohne PTR — unklar, welcher Name gilt
             A("altes-nas", "10.10.1.25"),
             A("nas-neu", "10.10.1.25"),
-            Ptr("10.10.1.25", "nas-neu." + fwd, rev1),
+            // Zusätzlicher Name für den Drucker, der PTR nennt den Hauptnamen
+            A("drucker-empfang", "10.10.2.31"),
             // Dynamische Clients, einer davon veraltet
             A("pc-0412", "10.20.5.12", daysAgo: 1),
             Ptr("10.20.5.12", "pc-0412." + fwd, rev2, daysAgo: 1),

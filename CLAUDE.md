@@ -224,6 +224,19 @@ lockert, sollte vorher mit dem Endpoint-Schutz-Team sprechen.
   schätzen.
 - **Sortierung** über `SortMemberPath`: `NameSortKey` (PTR numerisch hinter
   die Hosts), `DataSortKey` (Adressen numerisch), `TimestampSortKey`.
+- **ComboBox-Liste neu aufbauen:** Beim `Clear()` schreibt die ComboBox
+  `null` in die gebundene Auswahl. Wer darauf sofort mit einem Ersatzwert
+  reagiert, setzt ihn, während die Liste leer ist — die spätere Zuweisung
+  desselben Werts löst keine Änderung aus, und die ComboBox bleibt **leer**.
+  Passiert beim Merken des Zonenfilters; die Tests waren grün, aufgefallen ist
+  es nur am Bildschirmfoto. Lösung in `SetInventory`: während des Neuaufbaus
+  `null` ignorieren und danach `OnPropertyChanged(nameof(SelectedZone))`.
+- **Gemerktes Layout** (`MainWindow.RestoreLayout`/`CaptureLayout`,
+  Regeln in `LayoutRules`): Spaltenbreiten werden nur gespeichert, wenn der
+  Nutzer sie gezogen hat, und beim Anwenden nie unter das Minimum — sonst
+  überstimmt ein altes Layout jede spätere Standardbreite im Code. Ob das
+  Avalonia-DataGrid eine gezogene Spalte wirklich auf eine absolute Breite
+  umstellt, ist nur angenommen, nicht gemessen (Stand 2026-10-13).
 - **`IReadOnlyList.Count` im Binding vermeiden** — dafür gibt es `HasFindings`;
   die Eigenschaft liegt auf dem Basis-Interface.
 - Übrige Fallen (WrapPanel statt StackPanel, `--` in XAML-Kommentaren,

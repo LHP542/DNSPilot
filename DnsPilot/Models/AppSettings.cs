@@ -92,6 +92,42 @@ public sealed class AppSettings
 
     public const int MaxRecentSearches = 15;
 
+    // ------------------------------------------------------------------
+    // Zuletzt benutzte Ansicht
+    // ------------------------------------------------------------------
+
+    /// <summary>Filter „Zone"; null = alle Zonen.</summary>
+    public string? FilterZone { get; set; }
+
+    /// <summary>Filter „Typ"; null = alle Typen.</summary>
+    public string? FilterType { get; set; }
+
+    public bool FilterOnlyProblems { get; set; }
+
+    public bool FilterOnlyStatic { get; set; }
+
+    /// <summary>Fenstergröße im Normalzustand (nicht maximiert).</summary>
+    public double? WindowWidth { get; set; }
+
+    public double? WindowHeight { get; set; }
+
+    /// <summary>Fensterposition in Bildschirmpixeln.</summary>
+    public int? WindowX { get; set; }
+
+    public int? WindowY { get; set; }
+
+    public bool WindowMaximized { get; set; }
+
+    /// <summary>Breite der Detailspalte rechts.</summary>
+    public double? DetailPaneWidth { get; set; }
+
+    /// <summary>
+    /// Vom Nutzer verbreiterte Tabellenspalten, nach Spaltenüberschrift.
+    /// Nur Spalten, die er selbst gezogen hat — die übrigen behalten ihre
+    /// proportionale Breite und wachsen mit dem Fenster.
+    /// </summary>
+    public Dictionary<string, double> ColumnWidths { get; set; } = [];
+
     /// <summary>
     /// Nimmt einen Suchbegriff in die Verlaufsliste auf: nach vorn, ohne
     /// Duplikate (Groß-/Kleinschreibung egal), auf <see cref="MaxRecentSearches"/>
@@ -129,5 +165,16 @@ public sealed class AppSettings
         UpdateChannel = UpdateChannel,
         CheckUpdatesOnStart = CheckUpdatesOnStart,
         RecentSearches = [.. RecentSearches],
+        FilterZone = FilterZone,
+        FilterType = FilterType,
+        FilterOnlyProblems = FilterOnlyProblems,
+        FilterOnlyStatic = FilterOnlyStatic,
+        WindowWidth = WindowWidth,
+        WindowHeight = WindowHeight,
+        WindowX = WindowX,
+        WindowY = WindowY,
+        WindowMaximized = WindowMaximized,
+        DetailPaneWidth = DetailPaneWidth,
+        ColumnWidths = new Dictionary<string, double>(ColumnWidths),
     };
 }

@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -23,6 +24,10 @@ public partial class MainWindow : ChromeWindow, IShellServices
 
     private readonly MainWindowViewModel? _viewModel;
     private readonly IServiceProvider? _services;
+    private readonly SettingsService? _settings;
+
+    /// <summary>Standardbreiten der Tabellenspalten aus dem XAML, vor dem Wiederherstellen.</summary>
+    private readonly Dictionary<string, DataGridLength> _defaultColumnWidths = [];
 
     /// <summary>Parameterloser Konstruktor für den XAML-Designer.</summary>
     public MainWindow()
@@ -37,6 +42,11 @@ public partial class MainWindow : ChromeWindow, IShellServices
 
         DataContext = viewModel;
         viewModel.AttachShell(this);
+
+        // Im Bildschirmfoto-Modus gibt es keinen Dienstanbieter — dann bleibt
+        // das Layout aus dem XAML.
+        _settings = services.GetService<SettingsService>();
+        if (_settings is not null) RestoreLayout(_settings.Current);
 
         SettingsButton.Click += (_, _) => OpenSettings();
         AboutButton.Click += (_, _) => OpenAbout();
@@ -54,11 +64,96 @@ public partial class MainWindow : ChromeWindow, IShellServices
 
         Opened += async (_, _) =>
         {
+            EnsureReachable();
             SearchBox.Focus();
             await viewModel.InitializeAsync().ConfigureAwait(true);
         };
 
-        Closing += (_, _) => viewModel.PersistOnExit();
+        Closing += (_, _) =>
+        {
+            if (_settings is not null) CaptureLayout(_settings.Current);
+            viewModel.PersistOnExit();
+        };
+    }
+
+    // ------------------------------------------------------------------
+    // Fensterlayout merken
+    // ------------------------------------------------------------------
+
+    private void RestoreLayout(Models.AppSettings s)
+    {
+        Width = LayoutRules.Restore(s.WindowWidth, MinWidth, Width);
+        Height = LayoutRules.Restore(s.WindowHeight, MinHeight, Height);
+
+        if (s.WindowX is { } x && s.WindowY is { } y)
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Position = new PixelPoint(x, y);
+        }
+
+        if (s.WindowMaximized) WindowState = WindowState.Maximized;
+
+        var detail = ContentGrid.ColumnDefinitions[2];
+        detail.Width = new GridLength(LayoutRules.Restore(s.DetailPaneWidth, detail.MinWidth, detail.Width.Value));
+
+        foreach (var column in RecordsGrid.Columns)
+        {
+            string key = column.Header?.ToString() ?? string.Empty;
+            _defaultColumnWidths[key] = column.Width;
+            if (s.ColumnWidths.TryGetValue(key, out double saved))
+            {
+                column.Width = new DataGridLength(LayoutRules.Restore(saved, Math.Max(column.MinWidth, 40), saved));
+            }
+        }
+
+        Log.Debug("Fensterlayout wiederhergestellt ({0}×{1}, {2} Spalten).", Width, Height, s.ColumnWidths.Count);
+    }
+
+    /// <summary>
+    /// Holt ein Fenster zurück, das nach dem Abziehen eines Monitors außerhalb
+    /// jedes Bildschirms stünde.
+    /// </summary>
+    private void EnsureReachable()
+    {
+        if (WindowState != WindowState.Normal || Screens.All.Count == 0) return;
+
+        var areas = Screens.All.Select(sc => (sc.WorkingArea.X, sc.WorkingArea.Y, sc.WorkingArea.Width, sc.WorkingArea.Height));
+        if (LayoutRules.IsReachable(Position.X, Position.Y, areas)) return;
+
+        var primary = (Screens.Primary ?? Screens.All[0]).WorkingArea;
+        double scale = Screens.Primary?.Scaling ?? 1.0;
+        Position = new PixelPoint(
+            primary.X + Math.Max(0, (primary.Width - (int)(Width * scale)) / 2),
+            primary.Y + Math.Max(0, (primary.Height - (int)(Height * scale)) / 2));
+        Log.Info("Gespeicherte Fensterposition liegt auf keinem Bildschirm — Fenster zentriert.");
+    }
+
+    private void CaptureLayout(Models.AppSettings s)
+    {
+        // Größe und Position nur im Normalzustand: maximiert oder im Tray
+        // wären es die falschen Maße für den nächsten Start.
+        if (WindowState == WindowState.Normal)
+        {
+            s.WindowWidth = Width;
+            s.WindowHeight = Height;
+            s.WindowX = Position.X;
+            s.WindowY = Position.Y;
+        }
+        if (WindowState != WindowState.Minimized) s.WindowMaximized = WindowState == WindowState.Maximized;
+
+        double detail = ContentGrid.ColumnDefinitions[2].ActualWidth;
+        if (detail > 0) s.DetailPaneWidth = detail;
+
+        foreach (var column in RecordsGrid.Columns)
+        {
+            string key = column.Header?.ToString() ?? string.Empty;
+            var standard = _defaultColumnWidths.GetValueOrDefault(key, column.Width);
+            bool isAbsolute = column.Width.IsAbsolute;
+            double width = isAbsolute ? column.Width.Value : column.ActualWidth;
+
+            if (LayoutRules.IsUserWidth(isAbsolute, width, standard.IsAbsolute, standard.Value)) s.ColumnWidths[key] = width;
+            else s.ColumnWidths.Remove(key);
+        }
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

@@ -39,8 +39,18 @@ public enum FindingKind
     /// <summary>CNAME zeigt auf einen Namen, den es in den eigenen Zonen nicht gibt.</summary>
     CnameDangling,
 
-    /// <summary>Dieselbe Adresse hängt an mehreren Namen.</summary>
+    /// <summary>
+    /// Dieselbe Adresse hängt an mehreren Namen, und kein PTR bestätigt einen
+    /// davon als Hauptnamen.
+    /// </summary>
     DuplicateIp,
+
+    /// <summary>
+    /// Zusätzlicher Name für eine Adresse, deren PTR auf einen Hauptnamen mit
+    /// derselben Adresse zeigt — DNS-seitig stimmig, ob gewollt, entscheidet
+    /// der Mensch.
+    /// </summary>
+    AliasName,
 
     /// <summary>Dynamischer Eintrag, der sich lange nicht mehr registriert hat.</summary>
     Stale,

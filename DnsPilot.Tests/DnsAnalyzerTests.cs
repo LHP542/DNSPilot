@@ -158,14 +158,46 @@ public class DnsAnalyzerTests
     }
 
     [Fact]
-    public void Doppelte_Adresse_wird_bei_beiden_Namen_gemeldet()
+    public void Doppelte_Adresse_ohne_bestaetigenden_PTR_ist_eine_Warnung()
     {
         var alt = A("altes-nas", "172.16.1.25");
         var neu = A("nas-neu", "172.16.1.25");
-        var inv = Inventory(alt, neu, Ptr("172.16.1.25", "nas-neu"));
+        var inv = Inventory(alt, neu);
 
-        Kinds(inv, alt).Should().Contain(FindingKind.DuplicateIp);
+        _analyzer.Analyze(inv, alt, Now).Single(f => f.Kind == FindingKind.DuplicateIp).Severity.Should().Be(Severity.Warning);
         Kinds(inv, neu).Should().Contain(FindingKind.DuplicateIp);
+    }
+
+    [Fact]
+    public void Zusaetzliche_Namen_fuer_einen_Server_sind_nur_eine_Info()
+    {
+        // Fall vom ersten echten Lauf (Namen erfunden): zwei statische Namen
+        // für einen Server, dessen PTR seinen Computernamen nennt, und der
+        // Computername hat selbst einen A-Eintrag auf dieselbe Adresse.
+        var main = A("SRV-0815", "172.16.1.183", stamp: Now.AddDays(-1));
+        var alias1 = A("APPSERVICE01", "172.16.1.183");
+        var alias2 = A("APPPROXY01", "172.16.1.183");
+        var inv = Inventory(main, alias1, alias2, Ptr("172.16.1.183", "SRV-0815", stamp: Now.AddDays(-1)));
+
+        foreach (var alias in new[] { alias1, alias2 })
+        {
+            var findings = _analyzer.Analyze(inv, alias, Now);
+            findings.Should().ContainSingle().Which.Should().Match<Finding>(f =>
+                f.Kind == FindingKind.AliasName && f.Severity == Severity.Info && f.Text.Contains("SRV-0815.lhp.test"));
+        }
+
+        _analyzer.Analyze(inv, main, Now).Should().ContainSingle().Which.Should().Match<Finding>(f =>
+            f.Kind == FindingKind.AliasName && f.Text.StartsWith("Weitere Namen", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Zeigt_der_PTR_auf_einen_Namen_mit_anderer_Adresse_bleibt_es_ein_Widerspruch()
+    {
+        // Kein Hauptname auf dieser Adresse → kein Alias, sondern Widerspruch.
+        var a = A("app01", "172.16.1.184");
+        var inv = Inventory(a, A("woanders", "172.16.1.200"), Ptr("172.16.1.184", "woanders"));
+
+        Kinds(inv, a).Should().Contain(FindingKind.PtrMismatch).And.NotContain(FindingKind.AliasName);
     }
 
     [Fact]
@@ -234,7 +266,7 @@ public class DnsAnalyzerTests
 
         kinds.Should().Contain([
             FindingKind.MissingPtr, FindingKind.PtrOrphan, FindingKind.MissingA, FindingKind.PtrMismatch,
-            FindingKind.CnameDangling, FindingKind.DuplicateIp, FindingKind.Stale, FindingKind.NoReverseZone,
+            FindingKind.CnameDangling, FindingKind.DuplicateIp, FindingKind.AliasName, FindingKind.Stale, FindingKind.NoReverseZone,
         ]);
     }
 }

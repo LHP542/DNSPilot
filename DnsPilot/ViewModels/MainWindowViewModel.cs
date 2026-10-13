@@ -33,6 +33,16 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private Dictionary<string, RecordRow> _rowsByKey = new(StringComparer.Ordinal);
     private CancellationTokenSource? _filterDebounce;
 
+    /// <summary>Gemerkter Zonenfilter, bis die Zonenliste geladen ist.</summary>
+    private string? _pendingZone;
+
+    /// <summary>
+    /// Während die Zonenliste neu aufgebaut wird: Die ComboBox setzt ihre
+    /// Auswahl beim <c>Clear()</c> kurz auf null — das darf den gemerkten
+    /// Filter nicht überschreiben.
+    /// </summary>
+    private bool _rebuildingZones;
+
     public MainWindowViewModel(
         IDnsServer server,
         SettingsService settings,
@@ -49,6 +59,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _backup = backup;
 
         RecentSearches = new ObservableCollection<string>(settings.Current.RecentSearches);
+
+        // Zuletzt benutzte Filter. Die Zone kann erst gesetzt werden, wenn die
+        // Zonenliste geladen ist — bis dahin wartet sie in _pendingZone.
+        var c = settings.Current;
+        _pendingZone = c.FilterZone;
+        _selectedType = c.FilterType is { } t && TypeChoices.Contains(t) ? t : AllTypes;
+        _onlyProblems = c.FilterOnlyProblems;
+        _onlyStatic = c.FilterOnlyStatic;
     }
 
     /// <summary>Wird vom Fenster nach dem Laden gesetzt.</summary>
@@ -132,13 +150,46 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSearchTextChanged(string value) => ScheduleFilter();
 
-    partial void OnSelectedZoneChanged(string value) => ApplyFilter();
+    partial void OnSelectedZoneChanged(string value)
+    {
+        // Die ComboBox schreibt null zurück, wenn ihre Liste geleert wird.
+        // Während des Neuaufbaus nichts tun — die Auswahl wird danach gesetzt.
+        // Hier sofort „Alle Zonen" zu setzen, war der erste Anlauf: die Liste
+        // ist in dem Moment leer, und die spätere Zuweisung desselben Werts
+        // löste keine Änderung mehr aus — die ComboBox blieb leer.
+        if (value is null)
+        {
+            if (!_rebuildingZones) SelectedZone = AllZones;
+            return;
+        }
 
-    partial void OnSelectedTypeChanged(string value) => ApplyFilter();
+        if (!_rebuildingZones) _settings.Current.FilterZone = value == AllZones ? null : value;
+        ApplyFilter();
+    }
 
-    partial void OnOnlyProblemsChanged(bool value) => ApplyFilter();
+    partial void OnSelectedTypeChanged(string value)
+    {
+        if (value is null)
+        {
+            SelectedType = AllTypes;
+            return;
+        }
 
-    partial void OnOnlyStaticChanged(bool value) => ApplyFilter();
+        _settings.Current.FilterType = value == AllTypes ? null : value;
+        ApplyFilter();
+    }
+
+    partial void OnOnlyProblemsChanged(bool value)
+    {
+        _settings.Current.FilterOnlyProblems = value;
+        ApplyFilter();
+    }
+
+    partial void OnOnlyStaticChanged(bool value)
+    {
+        _settings.Current.FilterOnlyStatic = value;
+        ApplyFilter();
+    }
 
     // ------------------------------------------------------------------
     // Laden
@@ -221,14 +272,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             if (!_rowsByKey.TryAdd(row.Record.Key, row)) Log.Warn("Doppelter Eintrag übergangen: {0}", row.Record.Key);
         }
 
-        string zone = SelectedZone;
-        ZoneChoices.Clear();
-        ZoneChoices.Add(AllZones);
-        foreach (var z in inventory.Zones.OrderBy(z => z.IsReverse).ThenBy(z => z.Name, StringComparer.OrdinalIgnoreCase))
+        string zone = _pendingZone ?? SelectedZone;
+        _pendingZone = null;
+        _rebuildingZones = true;
+        try
         {
-            ZoneChoices.Add(z.Name);
+            ZoneChoices.Clear();
+            ZoneChoices.Add(AllZones);
+            foreach (var z in inventory.Zones.OrderBy(z => z.IsReverse).ThenBy(z => z.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                ZoneChoices.Add(z.Name);
+            }
+            SelectedZone = ZoneChoices.Contains(zone) ? zone : AllZones;
         }
-        SelectedZone = ZoneChoices.Contains(zone) ? zone : AllZones;
+        finally
+        {
+            _rebuildingZones = false;
+        }
+
+        // Auch wenn sich der Wert nicht geändert hat: die ComboBox hat beim
+        // Leeren ihre Auswahl verloren und muss sie neu gemeldet bekommen.
+        OnPropertyChanged(nameof(SelectedZone));
+        _settings.Current.FilterZone = SelectedZone == AllZones ? null : SelectedZone;
 
         int errors = _allRows.Count(r => r.HasError);
         int warnings = _allRows.Count(r => r.HasWarning);
