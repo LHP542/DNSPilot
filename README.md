@@ -22,7 +22,9 @@ eine Adresse verweist. Genau das zeigt DNS-Pilot.
     Zone, die nur sichere Updates zulässt
   - PTR und A widersprechen sich
   - CNAME zeigt ins Leere
-  - eine Adresse hängt an mehreren Namen
+  - eine Adresse hängt an mehreren Namen, und kein PTR sagt, welcher der
+    richtige ist (zeigt der PTR auf einen davon, sind die anderen nur
+    **weitere Namen** — ein Hinweis, kein Fehler)
   - dynamischer Eintrag hat sich seit Wochen nicht mehr registriert
   - Eintrag ist **verdeckt**: er liegt in einer Zone, für die es inzwischen
     eine speziellere Unterzone gibt — Clients sehen ihn nie
@@ -173,6 +175,14 @@ Löschen Name, Zone, Typ, Daten und TTL in eine Sicherungsdatei. Die Schaltfläc
 - **Bewertung** — ab wann ein dynamischer Eintrag als veraltet gilt und ab
   wann eine Adresse Aufräum-Kandidat wird; TTL für neue Einträge.
 - **Updates** — Netzwerkordner für Updates.
+
+## Was DNS-Pilot sich merkt
+
+Fenstergröße und -position, die Breite der Detailspalte, selbst verbreiterte
+Tabellenspalten und die Filter (Zone, Typ, „Nur Auffälligkeiten“, „Nur
+statische“) gelten beim nächsten Start wieder. Das Suchfeld startet leer.
+Wurde ein zweiter Monitor abgezogen, holt DNS-Pilot das Fenster auf den
+Hauptbildschirm zurück.
 
 ## Wo DNS-Pilot Daten ablegt
 

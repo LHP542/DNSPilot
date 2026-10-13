@@ -83,7 +83,8 @@ Was gebaut ist:
   keine Reverse-Zone, PTR widerspricht A, PTR verwaist (statisch oder nicht
   mehr erneuert) bzw. A-Eintrag fehlt (PTR frisch registriert — auf dem
   ersten echten Lauf bei Thin Clients gefunden, Zone nur mit sicheren Updates), PTR-Ziel extern,
-  CNAME ins Leere, doppelte Adresse, veralteter dynamischer Eintrag,
+  CNAME ins Leere, doppelte Adresse (nur wenn kein PTR einen der Namen
+  bestätigt — sonst „weiterer Name“ als Info), veralteter dynamischer Eintrag,
   verdeckter Eintrag (liegt in einer Zone, deren Unterzone für den Namen
   zuständig ist — Clients sehen ihn nie).
   DC-Einträge (Zonenspitze, DomainDnsZones, ForestDnsZones, gc, `_msdcs`)
