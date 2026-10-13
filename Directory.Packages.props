@@ -1,0 +1,52 @@
+<Project>
+  <!-- Central Package Management: EINZIGER Ort für Paketversionen.
+
+       ACHTUNG beim Anheben: Auf dem Arbeitslaptop blockt der FortiProxy seit
+       2026-08 die eigentlichen Paket-Downloads von nuget.org (HTTP 403 auf
+       /v3-flatcontainer/*.nupkg), obwohl die Metadaten durchgehen und px
+       sauber authentifiziert. Ein "dotnet package search" meldet deshalb
+       neuere Versionen, die sich nicht laden lassen.
+
+       Maßgeblich ist also, was im Offline-Feed C:\NuGet-Local liegt:
+
+           ls C:/NuGet-Local | grep -i <paket>
+
+       Nachschub kommt über Nougat (LHP542/Nougat) — es liest genau diese
+       Datei aus allen LHP542-Repos, restored auf Linux und schreibt einen
+       flachen NuGet-Local-Ordner zum Mitnehmen. Reihenfolge deshalb:
+       erst hier anheben und pushen, dann Nougat laufen lassen, dann den
+       Ordner auf den Arbeitslaptop kopieren. Zwischen Schritt 1 und 3 ist
+       der lokale Restore erwartungsgemäß kaputt, während die GitHub Actions
+       grün bleiben (der Runner kommt an nuget.org heran). -->
+  <ItemGroup>
+    <!-- Avalonia. DiagnosticsSupport folgt NICHT der Avalonia-Version
+         (eigene 2.x-Reihe).
+         Avalonia.Controls.DataGrid hat eine eigene Patch-Reihe: 12.1.2 setzt
+         laut nuspec nur Avalonia 12.1.0 voraus und passt damit zu 12.1.1. -->
+    <PackageVersion Include="Avalonia" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <!-- Nur Debug-Builds referenzieren dieses Paket (DevTools) -->
+    <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
+
+    <!-- MVVM & DI -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+
+    <!-- Logging -->
+    <PackageVersion Include="NLog" Version="6.2.0" />
+
+    <!-- DPAPI für das optional gemerkte Kennwort des Admin-Kontos -->
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
+
+    <!-- Versionierung -->
+    <PackageVersion Include="MinVer" Version="7.0.0" />
+
+    <!-- Tests (xunit.v3, NICHT das alte "xunit"-Paket, v2 ist deprecated);
+         FluentAssertions NICHT auf 8.x heben (kommerzielle Xceed-Lizenz) -->
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="FluentAssertions" Version="[7.2.2,8.0.0)" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+bin/
+obj/
+publish/
+*.user
+.vs/
+.idea/
+# Lokaler NuGet-Offline-Feed (Arbeitslaptop) — nie einchecken
+NuGet-Local/
+# Laufzeit-Artefakte
+logs/
+# Testergebnisse
+TestResults/
+*.trx

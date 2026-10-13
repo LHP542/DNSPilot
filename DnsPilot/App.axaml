@@ -1,0 +1,481 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:DnsPilot"
+             x:Class="DnsPilot.App"
+             RequestedThemeVariant="Dark">
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Resources>
+        <!-- Kroste-Palette. Keine #RRGGBB-Literale in den Fenstern —
+             ausschließlich diese Keys. -->
+        <SolidColorBrush x:Key="KrosteBackgroundBrush" Color="#1A1D21" />
+        <SolidColorBrush x:Key="KrosteTitleBarBrush" Color="#14161A" />
+        <SolidColorBrush x:Key="KrosteSurfaceBrush" Color="#22262B" />
+        <SolidColorBrush x:Key="KrosteCardBrush" Color="#1F2328" />
+        <SolidColorBrush x:Key="KrosteAccentBrush" Color="#123E6B" />
+        <SolidColorBrush x:Key="KrosteAccentHoverBrush" Color="#1B5390" />
+        <SolidColorBrush x:Key="KrosteAccentSoftBrush" Color="#1E3A5C" />
+        <SolidColorBrush x:Key="KrosteGoldBrush" Color="#E0B14C" />
+        <SolidColorBrush x:Key="KrosteBorderBrush" Color="#2E343C" />
+        <SolidColorBrush x:Key="KrosteBorderStrongBrush" Color="#3C444E" />
+        <SolidColorBrush x:Key="KrosteMutedTextBrush" Color="#8A93A0" />
+        <SolidColorBrush x:Key="KrosteSecondaryTextBrush" Color="#B7BEC7" />
+        <SolidColorBrush x:Key="KrosteTextBrush" Color="#E4E7EC" />
+        <SolidColorBrush x:Key="KrosteDangerBrush" Color="#C42B1C" />
+        <SolidColorBrush x:Key="KrosteSuccessBrush" Color="#3AA55B" />
+        <SolidColorBrush x:Key="KrosteWarningBrush" Color="#D08A28" />
+
+        <!-- Abgeleitete Flächen: nur hier definiert, damit ein Palettenwechsel
+             an einer Stelle passiert. -->
+        <SolidColorBrush x:Key="KrosteHoverBrush" Color="#2A2F36" />
+        <SolidColorBrush x:Key="KrostePressedBrush" Color="#181B20" />
+        <SolidColorBrush x:Key="KrosteChromeHoverBrush" Color="#2A2E33" />
+        <SolidColorBrush x:Key="KrosteRowHoverBrush" Color="#262B31" />
+        <SolidColorBrush x:Key="KrosteHeaderBrush" Color="#1A1D22" />
+        <SolidColorBrush x:Key="KrosteDangerSoftBrush" Color="#5A1F19" />
+        <SolidColorBrush x:Key="KrosteSuccessSoftBrush" Color="#1C3A26" />
+        <SolidColorBrush x:Key="KrosteWarningSoftBrush" Color="#3D2E13" />
+        <SolidColorBrush x:Key="KrosteOnAccentBrush" Color="#F5F7FA" />
+        <SolidColorBrush x:Key="KrosteFootnoteBrush" Color="#6B7280" />
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- ================================================================ -->
+        <!-- Titelleiste (Kroste-Chrome-Standard)                             -->
+        <!-- ================================================================ -->
+        <Style Selector="Button.chrome">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.chrome /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+        </Style>
+        <Style Selector="Button.chrome:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteChromeHoverBrush}" />
+        </Style>
+        <Style Selector="Button.chrome.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteDangerBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Buttons — konsistenter Basis-Look, Varianten via Klasse          -->
+        <!-- ================================================================ -->
+        <Style Selector="Button">
+            <Setter Property="Background" Value="{DynamicResource KrosteSurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteHoverBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderStrongBrush}" />
+        </Style>
+        <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrostePressedBrush}" />
+        </Style>
+        <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+
+        <!-- Primäre Aktion. WICHTIG: FluentTheme hat eine EINGEBAUTE
+             Button.accent-Klasse, die den ContentPresenter-Part einfärbt und
+             einen Setter auf Button.Background überstimmt. Deshalb den Akzent
+             DIREKT am ContentPresenter setzen. -->
+        <Style Selector="Button.accent">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteOnAccentBrush}" />
+            <Setter Property="Padding" Value="14,7" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.accent /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteAccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteOnAccentBrush}" />
+        </Style>
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentHoverBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteAccentHoverBrush}" />
+        </Style>
+
+        <!-- Ghost: rein textlich, Hover bekommt subtiles Card-Background. -->
+        <Style Selector="Button.ghost">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+            <Setter Property="Padding" Value="8,4" />
+        </Style>
+        <Style Selector="Button.ghost /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteHoverBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+
+        <!-- Gefährliche Aktion: roter Hover-State. DnsPilot liest nur, deshalb
+             kommt die Klasse hier praktisch nicht vor — sie bleibt trotzdem
+             definiert, damit ein späterer Classes="danger" nicht still ins
+             Leere greift. -->
+        <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteDangerSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteDangerBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Cards / Sektionen                                                -->
+        <!-- ================================================================ -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource KrosteCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+        <Style Selector="Border.card-flat">
+            <Setter Property="Background" Value="{DynamicResource KrosteCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Textrollen                                                       -->
+        <!-- ================================================================ -->
+        <Style Selector="TextBlock.section-label">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteMutedTextBrush}" />
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteMutedTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.secondary">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.h1">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteGoldBrush}" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.h2">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteGoldBrush}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <!-- Feld-Label und -Wert der Detailansicht. Getrennte Styles statt einer
+             Komma-Liste: Komma-Selektoren lösen auf den gemeinsamen Basistyp auf
+             und geben bei FontFamily/FontSize AVLN2000. -->
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteMutedTextBrush}" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0,3,12,0" />
+        </Style>
+        <Style Selector="TextBlock.field-value">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+        <!-- Monospace für DN, SID und GUID. Bewusst drei getrennte Styles statt
+             einer Komma-Liste: die löst auf den gemeinsamen Basistyp Control
+             auf, auf dem es kein FontFamily gibt — AVLN2000 mit einer
+             Fehlermeldung, die einen Typ nennt, der im XAML gar nicht vorkommt. -->
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="Cascadia Code,Consolas,Courier New,monospace" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="TextBox.mono">
+            <Setter Property="FontFamily" Value="Cascadia Code,Consolas,Courier New,monospace" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="TextBlock.warning">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteWarningBrush}" />
+        </Style>
+        <Style Selector="SelectableTextBlock.mono">
+            <Setter Property="FontFamily" Value="Cascadia Code,Consolas,Courier New,monospace" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="SelectableTextBlock.field-value">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+        </Style>
+        <!-- Hervorhebung für Werte, die Aufmerksamkeit verdienen (Passwort
+             läuft bald ab, Konto gesperrt seit …). Wird per Classes.warning
+             gebunden. -->
+        <Style Selector="SelectableTextBlock.warning">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteWarningBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Statusabzeichen (Konto aktiv/gesperrt, Gruppenart, Herkunft)     -->
+        <!-- ================================================================ -->
+        <Style Selector="Border.badge">
+            <Setter Property="Background" Value="{DynamicResource KrosteSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.badge > TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+        </Style>
+        <Style Selector="Border.badge.ok">
+            <Setter Property="Background" Value="{DynamicResource KrosteSuccessSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteSuccessBrush}" />
+        </Style>
+        <Style Selector="Border.badge.ok > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSuccessBrush}" />
+        </Style>
+        <Style Selector="Border.badge.warn">
+            <Setter Property="Background" Value="{DynamicResource KrosteWarningSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteWarningBrush}" />
+        </Style>
+        <Style Selector="Border.badge.warn > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteWarningBrush}" />
+        </Style>
+        <Style Selector="Border.badge.danger">
+            <Setter Property="Background" Value="{DynamicResource KrosteDangerSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteDangerBrush}" />
+        </Style>
+        <Style Selector="Border.badge.danger > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteDangerBrush}" />
+        </Style>
+        <Style Selector="Border.badge.accent">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteAccentHoverBrush}" />
+        </Style>
+        <Style Selector="Border.badge.accent > TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteOnAccentBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Eingabefelder — Fokus-Ring in Gold                               -->
+        <!-- ================================================================ -->
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource KrosteSurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,7" />
+        </Style>
+        <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderStrongBrush}" />
+        </Style>
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteGoldBrush}" />
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource KrosteSurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,7" />
+        </Style>
+        <Style Selector="ComboBox:focus /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteGoldBrush}" />
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Listen — Zeilen-Hover und Akzent-Selektion                       -->
+        <!-- ================================================================ -->
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="4,1" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteRowHoverBrush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentSoftBrush}" />
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentBrush}" />
+        </Style>
+
+        <Style Selector="TreeView">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="TreeViewItem">
+            <Setter Property="Padding" Value="4,3" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Margin" Value="2,0" />
+        </Style>
+        <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
+            <Setter Property="Background" Value="{DynamicResource KrosteRowHoverBrush}" />
+        </Style>
+        <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentSoftBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Segmentschalter — Radiobuttons, die wie eine Schaltergruppe wirken -->
+        <!-- ================================================================ -->
+        <Style Selector="RadioButton.segment">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource KrosteSurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <!-- Ohne eigenes Template bliebe der runde Punkt stehen; hier
+                         soll die ganze Fläche der Schalter sein. -->
+                    <Border Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.segment:pointerover /template/ Border#PART_Root">
+            <Setter Property="Background" Value="{DynamicResource KrosteHoverBrush}" />
+        </Style>
+        <Style Selector="RadioButton.segment:checked /template/ Border#PART_Root">
+            <Setter Property="Background" Value="{DynamicResource KrosteAccentSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteAccentHoverBrush}" />
+        </Style>
+        <Style Selector="RadioButton.segment:checked">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteOnAccentBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- ProgressBar — dünn, Gold                                         -->
+        <!-- ================================================================ -->
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteGoldBrush}" />
+            <Setter Property="Background" Value="{DynamicResource KrosteHoverBrush}" />
+            <Setter Property="MinHeight" Value="6" />
+            <Setter Property="CornerRadius" Value="3" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Trenner                                                          -->
+        <!-- ================================================================ -->
+        <Style Selector="Rectangle.divider-v">
+            <Setter Property="Width" Value="1" />
+            <Setter Property="Fill" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="Margin" Value="6,4" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Rectangle.divider-h">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Fill" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- GridSplitter dezent halten: er sitzt zwischen zwei Cards und soll
+             als Fuge wirken, nicht als eigene Fläche. -->
+        <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="GridSplitter:pointerover">
+            <Setter Property="Background" Value="{DynamicResource KrosteBorderStrongBrush}" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- DataGrid — cleaner Header, Row-Hover, Akzent-Selection           -->
+        <!-- AlternatingRowBackground gibt es in Avalonia 12 NICHT (AVLN2000). -->
+        <!-- ================================================================ -->
+        <Style Selector="DataGrid">
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="RowHeight" Value="30" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource KrosteHeaderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteMutedTextBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="BorderBrush" Value="{DynamicResource KrosteBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="10,6" />
+        </Style>
+        <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource KrosteRowHoverBrush}" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource KrosteAccentSoftBrush}" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="10,2" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+
+        <!-- ================================================================ -->
+        <!-- Statuspunkte in der Eintragstabelle                              -->
+        <!-- ================================================================ -->
+        <Style Selector="TextBlock.dot">
+            <Setter Property="Text" Value="●" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource KrosteBorderStrongBrush}" />
+        </Style>
+        <Style Selector="TextBlock.dot.ok">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSuccessBrush}" />
+        </Style>
+        <Style Selector="TextBlock.dot.info">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteSecondaryTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.dot.warn">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteWarningBrush}" />
+        </Style>
+        <Style Selector="TextBlock.dot.error">
+            <Setter Property="Foreground" Value="{DynamicResource KrosteDangerBrush}" />
+        </Style>
+    </Application.Styles>
+</Application>

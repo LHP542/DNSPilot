@@ -1,0 +1,51 @@
+<views:ChromeWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DnsPilot.Views"
+        xmlns:controls="using:DnsPilot.Controls"
+        x:Class="DnsPilot.Views.AboutWindow"
+        Width="470" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="Über DNS-Pilot"
+        Background="{DynamicResource KrosteBackgroundBrush}">
+    <DockPanel>
+        <controls:TitleBar DockPanel.Dock="Top" Title="Über DNS-Pilot" />
+
+        <StackPanel Margin="24" Spacing="16">
+            <StackPanel Spacing="4">
+                <TextBlock Text="DNS-Pilot" Classes="h1" FontSize="22" />
+                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                           Text="DNS-Einträge prüfen, durchsuchen und aufräumen: Erreichbarkeit, PTR-Abgleich, verwaiste Einträge und Netzsuche. Geändert wird nur im ausdrücklich eingeschalteten Schreibmodus." />
+                <TextBlock x:Name="VersionText" Classes="muted" FontSize="12" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <Rectangle Classes="divider-h" />
+
+            <StackPanel Spacing="8">
+                <TextBlock Text="UPDATES" Classes="section-label" />
+                <TextBlock x:Name="ChannelText" Classes="muted" FontSize="11"
+                           TextWrapping="Wrap" />
+
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                    <Button x:Name="CheckButton" Content="Auf Updates prüfen" />
+                    <Button x:Name="InstallButton" Classes="accent"
+                            Content="⬇ Update installieren" IsVisible="False" />
+                </WrapPanel>
+
+                <TextBlock x:Name="UpdateResult" Classes="secondary" TextWrapping="Wrap" />
+                <ProgressBar x:Name="UpdateProgress" IsIndeterminate="True" IsVisible="False" />
+            </StackPanel>
+
+            <Rectangle Classes="divider-h" />
+
+            <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <Button x:Name="GithubButton" Content="Quellcode auf GitHub" />
+                <Button x:Name="LogButton" Content="Logdateien öffnen" />
+            </WrapPanel>
+
+            <TextBlock Foreground="{DynamicResource KrosteFootnoteBrush}" FontSize="11"
+                       TextWrapping="Wrap"
+                       Text="Dienstliches Werkzeug · Landeshauptstadt Potsdam, FB 5424 — IT-Basis-Dienste" />
+        </StackPanel>
+    </DockPanel>
+</views:ChromeWindow>

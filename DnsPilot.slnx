@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DnsPilot/DnsPilot.csproj" />
+  <Project Path="DnsPilot.Tests/DnsPilot.Tests.csproj" />
+</Solution>

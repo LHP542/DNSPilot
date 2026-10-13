@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <!-- Nicht entfernen — sonst leiden Fenster-Transparenz und die Einbettung von
+       Standard-Windows-Controls (ComboBox-Popups etc.). -->
+  <assemblyIdentity version="1.0.0.0" name="DnsPilot"/>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 + 11 (dieselbe GUID gilt für beide). -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+    </application>
+  </compatibility>
+
+  <!-- Per-Monitor-DPI-Awareness v2: ohne den Eintrag rendert Avalonia auf
+       4K/HiDPI unter Windows blurry (System-DPI-Bitmap-Skalierung des OS).
+       longPathAware als billige Absicherung gegen MAX_PATH-Ärger. -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+</assembly>

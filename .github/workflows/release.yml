@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # MinVer braucht die Historie inkl. Tags
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Version ermitteln
+        id: ver
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "v=0.0.0-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test
+        run: dotnet test DnsPilot.Tests/DnsPilot.Tests.csproj -c Release
+
+      - name: Publish (win-x64)
+        run: >
+          dotnet publish DnsPilot/DnsPilot.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.ver.outputs.v }}
+          -o publish/win-x64
+
+      # Der Dateiname ist Teil der Schnittstelle: der Update-Checker liest die
+      # Version daraus (siehe UpdateChannel.ParseVersionFromFileName). Wer ihn
+      # ändert, macht das Ausrollen über den Netzwerkordner kaputt.
+      - name: ZIP packen
+        shell: pwsh
+        run: Compress-Archive -Path publish/win-x64/* -DestinationPath "DnsPilot-${{ steps.ver.outputs.v }}-win-x64.zip"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: DnsPilot-*-win-x64.zip
+          retention-days: 1
+
+  release:
+    needs: [build-windows]
+    runs-on: ubuntu-latest
+    # Beim manuellen Start (workflow_dispatch ohne Tag) überspringen.
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+
+      - name: GitHub-Release anlegen/aktualisieren
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/**/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            **Ausrollen im Firmennetz:** das ZIP unverändert nach
+            `\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot` kopieren.
+            DnsPilot erkennt die neue Version am Dateinamen und bietet sie
+            im Über-Fenster zur Installation an.

@@ -1,0 +1,190 @@
+<views:ChromeWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DnsPilot.Views"
+        xmlns:controls="using:DnsPilot.Controls"
+        xmlns:vm="using:DnsPilot.ViewModels"
+        x:Class="DnsPilot.Views.SettingsWindow"
+        x:DataType="vm:SettingsWindowViewModel"
+        Title="Einstellungen"
+        Width="640" Height="760"
+        MinWidth="560" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource KrosteBackgroundBrush}">
+
+    <DockPanel>
+        <controls:TitleBar DockPanel.Dock="Top" Title="Einstellungen" />
+
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource KrosteTitleBarBrush}"
+                BorderBrush="{DynamicResource KrosteBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button Content="Abbrechen" Command="{Binding CancelCommand}" />
+                <Button Content="Speichern" Classes="accent" Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Padding="16,14,28,14">
+            <StackPanel Spacing="12">
+
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Einstellungen" Classes="h1" />
+                    <TextBlock Classes="muted" FontSize="12"
+                               Text="DNS-Server, Anmeldung, Prüfverhalten und Update-Kanal." />
+                </StackPanel>
+
+                <!-- ==================== Verbindung ==================== -->
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="DNS-SERVER" Classes="section-label" />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Server (Name oder IP)" Classes="secondary" FontSize="12" />
+                            <TextBox Text="{Binding ServerName, Mode=TwoWay}"
+                                     PlaceholderText="z. B. DC03 oder 172.16.1.11" />
+                            <TextBlock Text="{Binding AutoServerHint}" Classes="muted" FontSize="11" />
+                        </StackPanel>
+
+                        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                   Text="Die Zonen sind AD-integriert und auf allen DCs gleich. Ist ein DC nicht erreichbar, einfach einen anderen eintragen." />
+                    </StackPanel>
+                </Border>
+
+                <!-- ==================== Anmeldung ==================== -->
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="ANMELDUNG" Classes="section-label" />
+
+                        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                   Text="Leer lassen, wenn DNS-Pilot schon unter dem Admin-Konto läuft (z. B. auf dem Jumphost oder per „Als anderer Benutzer ausführen“). Ein Konto hier ist für den Start unter dem Alltagskonto gedacht." />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Admin-Konto" Classes="secondary" FontSize="12" />
+                            <TextBox Text="{Binding AdminUser, Mode=TwoWay}"
+                                     PlaceholderText="DOMÄNE\adm.name oder adm.name@domäne" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Kennwort" Classes="secondary" FontSize="12" />
+                            <TextBox Text="{Binding AdminPassword, Mode=TwoWay}"
+                                     PasswordChar="•"
+                                     PlaceholderText="gilt sofort für diese Sitzung" />
+                            <CheckBox Content="Kennwort merken (DPAPI, an dieses Windows-Konto gebunden)"
+                                      IsChecked="{Binding RememberPassword, Mode=TwoWay}" />
+
+                            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasStoredPassword}">
+                                <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap"
+                                           Text="Ein Kennwort ist bekannt. Feld leer lassen = unverändert." />
+                                <Button Grid.Column="1" Classes="ghost" Content="Vergessen"
+                                        Command="{Binding ClearStoredPasswordCommand}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <Button Content="Verbindung testen" Command="{Binding TestConnectionCommand}" />
+                            <ProgressBar IsIndeterminate="True" Width="90" VerticalAlignment="Center"
+                                         IsVisible="{Binding IsBusy}" />
+                        </WrapPanel>
+
+                        <Border Classes="card"
+                                IsVisible="{Binding TestResult, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                Background="{DynamicResource KrosteSurfaceBrush}">
+                            <TextBlock Text="{Binding TestResult}" TextWrapping="Wrap" FontSize="12"
+                                       Classes.warning="{Binding !TestSucceeded}" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ==================== Prüfung ==================== -->
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="PRÜFUNG" Classes="section-label" />
+
+                        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                   Text="Geprüft werden nur Adressen, die im DNS stehen. Niedrige Parallelität und eine Pause halten die Prüfung unter dem Radar von Endpoint-Schutz und IDS." />
+
+                        <WrapPanel ItemSpacing="16" LineSpacing="10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Ping-Wartezeit (ms)" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding PingTimeoutMs, Mode=TwoWay}" Width="150"
+                                               Minimum="100" Maximum="10000" Increment="100" FormatString="0" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Gleichzeitig" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding MaxParallel, Mode=TwoWay}" Width="130"
+                                               Minimum="1" Maximum="32" FormatString="0" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Pause (ms)" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding PauseBetweenMs, Mode=TwoWay}" Width="130"
+                                               Minimum="0" Maximum="5000" Increment="10" FormatString="0" />
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <CheckBox Content="Namen auflösen und mit dem Eintrag vergleichen"
+                                  IsChecked="{Binding CheckResolution, Mode=TwoWay}" />
+
+                        <CheckBox Content="Ohne Ping-Antwort zusätzlich TCP-Ports anfragen"
+                                  IsChecked="{Binding CheckTcpPorts, Mode=TwoWay}" />
+                        <StackPanel Spacing="4" IsEnabled="{Binding CheckTcpPorts}">
+                            <TextBlock Text="Ports (nacheinander, nicht gleichzeitig)" Classes="secondary" FontSize="12" />
+                            <TextBox Text="{Binding TcpPortsText, Mode=TwoWay}" Classes="mono" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ==================== Bewertung ==================== -->
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="BEWERTUNG" Classes="section-label" />
+
+                        <WrapPanel ItemSpacing="16" LineSpacing="10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Veraltet nach (Tagen)" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding StaleAfterDays, Mode=TwoWay}" Width="150"
+                                               Minimum="1" Maximum="3650" FormatString="0" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Kandidat nach (Tagen)" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding CandidateAfterDays, Mode=TwoWay}" Width="150"
+                                               Minimum="1" Maximum="3650" FormatString="0" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="… und Fehlversuchen" Classes="secondary" FontSize="12" />
+                                <NumericUpDown Value="{Binding CandidateMinChecks, Mode=TwoWay}" Width="150"
+                                               Minimum="1" Maximum="1000" FormatString="0" />
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                   Text="„Veraltet“ betrifft dynamische Einträge, die sich so lange nicht mehr registriert haben. „Kandidat“ wird eine Adresse erst, wenn sie über den Zeitraum UND bei der Mindestzahl an Prüfungen nie geantwortet hat." />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="TTL für neue Einträge (Sekunden)" Classes="secondary" FontSize="12" />
+                            <NumericUpDown Value="{Binding DefaultTtl, Mode=TwoWay}" Width="150" HorizontalAlignment="Left"
+                                           Minimum="60" Maximum="604800" Increment="300" FormatString="0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ==================== Updates ==================== -->
+                <Border Classes="card">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="UPDATES" Classes="section-label" />
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Update-Ordner" Classes="secondary" FontSize="12" />
+                            <TextBox Text="{Binding UpdateChannel, Mode=TwoWay}" Classes="mono" />
+                            <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                       Text="Netzwerkordner mit den Paketen DnsPilot-X.Y.Z-win-x64.zip. Es gewinnt immer die höchste Version, nicht die zuletzt kopierte Datei." />
+                        </StackPanel>
+
+                        <CheckBox Content="Beim Start nach Updates sehen"
+                                  IsChecked="{Binding CheckUpdatesOnStart, Mode=TwoWay}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</views:ChromeWindow>

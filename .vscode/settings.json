@@ -1,0 +1,8 @@
+{
+    // PFLICHT bei .slnx-Projekten. Ohne diesen Eintrag generiert sich das C# Dev Kit
+    // beim ersten Öffnen eine eigene .sln im Workspace-Cache und hält daran fest —
+    // auch später, wenn Projekte dazugekommen sind. Der Test-Explorer arbeitet dann
+    // auf einer veralteten Projektliste und bricht mit "Test Run Aborted" bei
+    // 0 Tests ab, während `dotnet test` auf der Kommandozeile alles findet.
+    "dotnet.defaultSolution": "DnsPilot.slnx"
+}

@@ -1,0 +1,368 @@
+<views:ChromeWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DnsPilot.Views"
+        xmlns:controls="using:DnsPilot.Controls"
+        xmlns:vm="using:DnsPilot.ViewModels"
+        xmlns:models="using:DnsPilot.Models"
+        x:Class="DnsPilot.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="DNS-Pilot"
+        Width="1440" Height="880"
+        MinWidth="1000" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource KrosteBackgroundBrush}">
+
+    <DockPanel>
+        <controls:TitleBar DockPanel.Dock="Top" Title="DNS-Pilot">
+            <controls:TitleBar.Actions>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="SettingsButton" Classes="chrome" Content="⚙"
+                            ToolTip.Tip="Einstellungen" />
+                    <Button x:Name="AboutButton" Classes="chrome" Content="ⓘ"
+                            ToolTip.Tip="Über DNS-Pilot" />
+                </StackPanel>
+            </controls:TitleBar.Actions>
+        </controls:TitleBar>
+
+        <!-- ============================== Statusleiste ============================== -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource KrosteTitleBarBrush}"
+                BorderBrush="{DynamicResource KrosteBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="14,6">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Text="{Binding StatusText}" Classes="secondary"
+                           FontSize="12" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+
+                <ProgressBar Grid.Column="1" IsIndeterminate="True" Width="120"
+                             Margin="12,0" VerticalAlignment="Center"
+                             IsVisible="{Binding IsBusy}" />
+
+                <TextBlock Grid.Column="2" Text="{Binding ConnectionText}"
+                           Classes="muted" FontSize="11.5" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- ============================== Inhalt ============================== -->
+        <Grid Margin="14,12,14,10" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="DNS-Pilot" Classes="h1" />
+                    <TextBlock Classes="muted" FontSize="12"
+                               Text="DNS-Einträge prüfen, durchsuchen und aufräumen — Erreichbarkeit, PTR-Abgleich, verwaiste Einträge, Netzsuche." />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding InventorySummary}"
+                           Classes="secondary" FontSize="12" VerticalAlignment="Bottom" />
+            </Grid>
+
+            <!-- Hinweis auf ein verfügbares Update -->
+            <Border Grid.Row="1" Classes="card" Margin="0,12,0,0"
+                    Background="{DynamicResource KrosteAccentSoftBrush}"
+                    BorderBrush="{DynamicResource KrosteAccentHoverBrush}"
+                    IsVisible="{Binding UpdateNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding UpdateNotice}"
+                           Foreground="{DynamicResource KrosteOnAccentBrush}"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <!-- Fehlerzeile: inline statt Dialog -->
+            <Border Grid.Row="2" Classes="card" Margin="0,12,0,0"
+                    Background="{DynamicResource KrosteDangerSoftBrush}"
+                    BorderBrush="{DynamicResource KrosteDangerBrush}"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"
+                                         Foreground="{DynamicResource KrosteTextBrush}"
+                                         VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Classes="ghost" Content="✕"
+                            Command="{Binding DismissErrorCommand}"
+                            ToolTip.Tip="Hinweis ausblenden" />
+                </Grid>
+            </Border>
+
+            <!-- ============================== Aktionen ============================== -->
+            <WrapPanel Grid.Row="3" Margin="0,12,0,0" ItemSpacing="10" LineSpacing="10">
+
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="SUCHE" Classes="section-label" />
+                        <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <AutoCompleteBox x:Name="SearchBox" Width="340"
+                                             Text="{Binding SearchText, Mode=TwoWay}"
+                                             ItemsSource="{Binding RecentSearches}"
+                                             FilterMode="Contains"
+                                             MinimumPrefixLength="1"
+                                             PlaceholderText="🔍  Name, IP, Netz (172.16.1.0/24) oder Bereich"
+                                             ToolTip.Tip="Name oder Teil davon · 172.16.1.11 · 172.16.1.0/24 · 172.16.1.10-50 · 172.16.1.*" />
+                            <ComboBox Width="210" ItemsSource="{Binding ZoneChoices}"
+                                      SelectedItem="{Binding SelectedZone, Mode=TwoWay}" />
+                            <ComboBox Width="120" ItemsSource="{Binding TypeChoices}"
+                                      SelectedItem="{Binding SelectedType, Mode=TwoWay}" />
+                            <CheckBox Content="Nur Auffälligkeiten"
+                                      ToolTip.Tip="Fehler, Warnungen, Aufräum-Kandidaten und Auflösungsprobleme"
+                                      IsChecked="{Binding OnlyProblems, Mode=TwoWay}" />
+                            <CheckBox Content="Nur statische"
+                                      ToolTip.Tip="Dynamische Einträge räumt der DNS-Server selbst auf — statische fasst niemand an"
+                                      IsChecked="{Binding OnlyStatic, Mode=TwoWay}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="PRÜFEN" Classes="section-label" />
+                        <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <Button Classes="accent" Content="{Binding ScanVisibleLabel}"
+                                    Command="{Binding ScanVisibleCommand}"
+                                    ToolTip.Tip="Ping und Namensauflösung für alle angezeigten Einträge" />
+                            <Button Content="Auswahl prüfen" Command="{Binding ScanSelectedCommand}"
+                                    ToolTip.Tip="Nur die markierten Zeilen prüfen" />
+                            <Button Classes="ghost" Content="Abbrechen" Command="{Binding CancelScanCommand}"
+                                    IsVisible="{Binding IsScanning}" />
+                            <StackPanel Spacing="2" VerticalAlignment="Center" MinWidth="140">
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding ScanProgress}"
+                                             IsVisible="{Binding IsScanning}" />
+                                <TextBlock Text="{Binding ScanText}" Classes="muted" FontSize="11" />
+                            </StackPanel>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="DATEN" Classes="section-label" />
+                        <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <Button Content="⟳ Neu laden" Command="{Binding ReloadCommand}"
+                                    ToolTip.Tip="Alle Zonen erneut vom Server laden (F5)" />
+                            <Button Classes="ghost" Content="CSV" Command="{Binding ExportCsvCommand}"
+                                    ToolTip.Tip="Angezeigte Einträge als CSV speichern" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="ÄNDERN" Classes="section-label" />
+                        <WrapPanel ItemSpacing="8" LineSpacing="8">
+                            <CheckBox Content="Änderungen erlauben"
+                                      ToolTip.Tip="Schreibschutz für diese Sitzung aufheben. Beim nächsten Start ist er wieder an."
+                                      IsChecked="{Binding AllowChanges, Mode=TwoWay}" />
+                            <Button Classes="accent" Content="＋ Neuer Host" Command="{Binding NewHostCommand}" />
+                            <Button Classes="danger" Content="Löschen …" Command="{Binding DeleteSelectedCommand}"
+                                    ToolTip.Tip="Markierte Einträge löschen (Entf) — mit Bestätigung und Sicherung" />
+                            <Button Classes="ghost" Content="Sicherungen" Command="{Binding OpenBackupFolderCommand}"
+                                    ToolTip.Tip="Ordner mit den Sicherungen gelöschter Einträge öffnen" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- ============================== Netzübersicht ============================== -->
+            <Border Grid.Row="4" Classes="card" Margin="0,10,0,0"
+                    BorderBrush="{DynamicResource KrosteGoldBrush}"
+                    IsVisible="{Binding HasNetworkSummary}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <SelectableTextBlock Text="{Binding NetworkSummary}" TextWrapping="Wrap"
+                                         VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Classes="ghost" Content="⧉ Freie Adressen kopieren"
+                            Command="{Binding CopyFreeAddressesCommand}" />
+                </Grid>
+            </Border>
+
+            <!-- ============================== Tabelle und Details ============================== -->
+            <Grid Grid.Row="5" Margin="0,10,0,0" ColumnDefinitions="*,6,350">
+
+                <Border Classes="card-flat" ClipToBounds="True">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Background="{DynamicResource KrosteHeaderBrush}"
+                                BorderBrush="{DynamicResource KrosteBorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                CornerRadius="8,8,0,0"
+                                Padding="12,8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="EINTRÄGE" Classes="section-label" Margin="0" />
+                                <TextBlock Grid.Column="1" Text="{Binding VisibleSummary}"
+                                           Classes="muted" FontSize="11.5" />
+                            </Grid>
+                        </Border>
+
+                        <DataGrid Grid.Row="1" x:Name="RecordsGrid"
+                                  ItemsSource="{Binding VisibleRows}"
+                                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                                  SelectionMode="Extended"
+                                  IsReadOnly="True"
+                                  CanUserSortColumns="True"
+                                  CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="DNS" Width="48" SortMemberPath="Severity">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:RecordRow">
+                                            <TextBlock Classes="dot"
+                                                       Classes.error="{Binding HasError}"
+                                                       Classes.warn="{Binding HasWarning}"
+                                                       Classes.info="{Binding HasInfo}"
+                                                       ToolTip.Tip="{Binding FindingsText}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="Netz" Width="48" SortMemberPath="ReachabilitySortKey">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:RecordRow">
+                                            <TextBlock Classes="dot"
+                                                       Classes.ok="{Binding IsOnline}"
+                                                       Classes.warn="{Binding IsOffline}"
+                                                       Classes.error="{Binding IsCandidate}"
+                                                       ToolTip.Tip="{Binding ReachabilityText}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Name" Width="2*" MinWidth="160" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding Name}" SortMemberPath="NameSortKey" />
+                                <DataGridTextColumn Header="Typ" Width="96" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding TypeText}" />
+                                <DataGridTextColumn Header="Daten" Width="1.6*" MinWidth="120" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding Data}" SortMemberPath="DataSortKey" />
+                                <DataGridTextColumn Header="Zeitstempel" Width="122" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding TimestampText}" SortMemberPath="TimestampSortKey" />
+                                <DataGridTextColumn Header="Erreichbarkeit" Width="198" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding ReachabilityText}" SortMemberPath="ReachabilitySortKey" />
+                                <DataGridTextColumn Header="Hinweise" Width="2.4*" MinWidth="160" x:DataType="vm:RecordRow"
+                                                    Binding="{Binding FindingsText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+                <!-- ==================== Details ==================== -->
+                <Border Grid.Column="2" Classes="card-flat" IsVisible="{Binding !HasSelection}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" Margin="20">
+                        <TextBlock Text="🧭" FontSize="40" HorizontalAlignment="Center" Opacity="0.4" />
+                        <TextBlock Text="Kein Eintrag ausgewählt" Classes="h2" HorizontalAlignment="Center" />
+                        <TextBlock Classes="muted" HorizontalAlignment="Center" TextAlignment="Center"
+                                   MaxWidth="320" TextWrapping="Wrap"
+                                   Text="Einen Eintrag in der Tabelle anklicken, um Befunde, Prüfhistorie und zusammenhängende Einträge zu sehen." />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Classes="card-flat" ClipToBounds="True" IsVisible="{Binding HasSelection}">
+                    <ScrollViewer Padding="16,14,28,14">
+                        <StackPanel Spacing="14">
+
+                            <!-- Ab hier ist der DataContext die Zeile. Der Wechsel sitzt bewusst
+                                 auf einem eigenen Element ohne weitere Bindings — alle Bindings
+                                 an einem Element werten gegen den NEUEN Kontext aus. -->
+                            <StackPanel Spacing="14" DataContext="{Binding SelectedRow}" x:DataType="vm:RecordRow">
+                                <StackPanel Spacing="2">
+                                    <SelectableTextBlock Text="{Binding Name}" Classes="h2" TextWrapping="Wrap" />
+                                    <TextBlock Classes="muted" FontSize="11.5" TextWrapping="Wrap">
+                                        <Run Text="{Binding TypeText}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Data}" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="EINTRAG" Classes="section-label" />
+                                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="5" Text="Eintragsname" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="field-value mono" Text="{Binding OwnerName}" />
+
+                                        <TextBlock Text="Name in Zone" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Column="1" Classes="field-value" Text="{Binding HostLabel}" />
+
+                                        <TextBlock Grid.Row="1" Text="Zone" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="field-value" Text="{Binding Zone}" />
+
+                                        <TextBlock Grid.Row="2" Text="Daten" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="field-value mono" Text="{Binding Data}" />
+
+                                        <TextBlock Grid.Row="3" Text="TTL" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="field-value" Text="{Binding TtlText}" />
+
+                                        <TextBlock Grid.Row="4" Text="Zeitstempel" Classes="field-label" />
+                                        <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="field-value" Text="{Binding TimestampText}" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <Rectangle Classes="divider-h" />
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="BEFUNDE" Classes="section-label" />
+                                    <TextBlock Text="Keine Auffälligkeiten." Classes="muted"
+                                               IsVisible="{Binding !HasFindings}" />
+                                    <ItemsControl ItemsSource="{Binding Findings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="models:Finding">
+                                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,4" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <Rectangle Classes="divider-h" />
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="ERREICHBARKEIT" Classes="section-label" />
+                                    <Border Classes="badge" HorizontalAlignment="Left"
+                                            Classes.ok="{Binding IsOnline}"
+                                            Classes.warn="{Binding IsOffline}"
+                                            Classes.danger="{Binding IsCandidate}">
+                                        <TextBlock Text="{Binding ReachabilityText}" />
+                                    </Border>
+                                    <TextBlock Text="{Binding SightingDetails}" Classes="secondary"
+                                               FontSize="12" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding ResolveText}" FontSize="12" TextWrapping="Wrap"
+                                               Classes.warning="{Binding ResolveProblem}"
+                                               IsVisible="{Binding HasResolveText}" />
+                                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                               IsVisible="{Binding IsCandidate}"
+                                               Text="Kandidat zum Aufräumen: seit längerer Zeit bei mehreren Prüfungen nicht erreicht. Vor dem Löschen klären, ob das Gerät nur ausgeschaltet oder durch eine Firewall abgeschirmt ist." />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Rectangle Classes="divider-h" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="ZUSAMMENHANG" Classes="section-label" />
+                                <TextBlock Text="Keine weiteren Einträge verweisen hierauf." Classes="muted"
+                                           IsVisible="{Binding !RelatedRows.Count}" />
+                                <ItemsControl ItemsSource="{Binding RelatedRows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:RecordRow">
+                                            <Button Classes="ghost" HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left" Margin="0,0,0,2"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).GoToRowCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <TextBlock Classes="dot" Margin="0,0,8,0"
+                                                               Classes.error="{Binding HasError}"
+                                                               Classes.warn="{Binding HasWarning}"
+                                                               Classes.info="{Binding HasInfo}" />
+                                                    <StackPanel Grid.Column="1" Spacing="1">
+                                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis">
+                                                            <Run Text="{Binding TypeText}" />
+                                                            <Run Text=" → " />
+                                                            <Run Text="{Binding Data}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</views:ChromeWindow>

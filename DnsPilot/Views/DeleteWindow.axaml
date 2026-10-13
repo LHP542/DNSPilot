@@ -1,0 +1,60 @@
+<views:ChromeWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DnsPilot.Views"
+        xmlns:controls="using:DnsPilot.Controls"
+        xmlns:vm="using:DnsPilot.ViewModels"
+        x:Class="DnsPilot.Views.DeleteWindow"
+        x:DataType="vm:DeleteWindowViewModel"
+        Title="Einträge löschen"
+        Width="640" Height="520"
+        MinWidth="520" MinHeight="380"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource KrosteBackgroundBrush}">
+
+    <DockPanel>
+        <controls:TitleBar DockPanel.Dock="Top" Title="Einträge löschen" />
+
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource KrosteTitleBarBrush}"
+                BorderBrush="{DynamicResource KrosteBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <Grid ColumnDefinitions="*,Auto">
+                <CheckBox Content="Ich habe die Liste geprüft"
+                          IsChecked="{Binding Reviewed, Mode=TwoWay}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Abbrechen" Command="{Binding CancelCommand}" />
+                    <Button Content="Löschen" Classes="danger" Command="{Binding DeleteCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Margin="16,14" RowDefinitions="Auto,Auto,*">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Einträge löschen" Classes="h1" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="Der DNS-Server hat keinen Papierkorb. Jeder Eintrag wird vor dem Löschen als JSON gesichert (Schaltfläche „Sicherungen“ im Hauptfenster)." />
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="{Binding CountText}" Classes="secondary"
+                       Margin="0,12,0,6" />
+
+            <Border Grid.Row="2" Classes="card-flat" ClipToBounds="True">
+                <ScrollViewer Padding="12,8,24,8">
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:DeleteItem">
+                                <CheckBox IsChecked="{Binding Include, Mode=TwoWay}" Margin="0,2">
+                                    <StackPanel Spacing="1">
+                                        <TextBlock Text="{Binding Text}" Classes="mono" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Reason}" Classes="muted" FontSize="11" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DockPanel>
+</views:ChromeWindow>

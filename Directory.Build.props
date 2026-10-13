@@ -1,0 +1,24 @@
+<Project>
+  <!-- Kroste-Standard: gemeinsame Build-Einstellungen für alle Projekte im Repo -->
+  <PropertyGroup>
+    <!-- DnsPilot ist bewusst Windows-only: System.DirectoryServices.Protocols mit
+         Kerberos/Negotiate-Bind und DPAPI gibt es sinnvoll nur hier. Deshalb
+         net10.0-windows statt des sonst üblichen net10.0 — damit meldet der
+         Analyzer CA1416 (plattformspezifischer Aufruf) gar nicht erst.
+         Bewusst OHNE Versionssuffix: das SDK setzt dann TargetPlatformVersion
+         auf 7.0, und [SupportedOSPlatform("windows")] genügt zur Abgrenzung.
+         Ein SupportedOSPlatformVersion über 7.0 gibt hier NETSDK1135. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- MinVer: Version aus Git-Tags (v*) -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

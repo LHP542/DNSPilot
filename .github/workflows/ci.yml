@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    # DnsPilot zielt auf net10.0-windows — die Tests müssen auf Windows laufen.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # MinVer braucht die volle Historie inkl. Tags
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+
+      # KEINE VSTest-Flags. xunit.v3 läuft auf der Microsoft.Testing.Platform,
+      # die "--logger trx;..." nicht kennt: sie meldet "Unknown option
+      # '--logger'", führt NULL Tests aus und endet mit Exitcode 5. Der Lauf ist
+      # dann rot, OHNE dass ein Test fehlschlägt — real hier passiert
+      # (2026-08-25). Gleiches gilt für --nologo.
+      #
+      # Der TRX-Report kommt stattdessen von xunit selbst und heißt
+      # --report-xunit-trx (nicht --report-trx, das gehört zu einer separaten
+      # Testing-Platform-Erweiterung). Optionen für die Test-App müssen hinter
+      # dem "--"-Separator stehen.
+      - name: Tests
+        run: >
+          dotnet test --no-build -c Release --
+          --report-xunit-trx --report-xunit-trx-filename test-results.trx
+
+      # Ohne diesen Schritt steht in der Job-Zusammenfassung eines roten Laufs
+      # nur "Process completed with exit code 1". Das Job-Log ist zwar mit
+      # angemeldetem gh lesbar, Annotations sind es aber auch ohne — und sie
+      # stehen direkt am Lauf, statt 500 Zeilen Log durchsuchen zu müssen.
+      #
+      # Bewusst aus der TRX und nicht aus der Konsolenausgabe: die TRX ist
+      # strukturiert und sprachunabhängig. Ein Parser auf den Konsolentext
+      # müsste "failed ..." suchen und bräche, sobald das SDK lokalisiert
+      # ausgibt ("fehlerhaft ...").
+      - name: Testfehler als Annotation ausgeben
+        if: failure()
+        shell: pwsh
+        run: |
+          [Console]::OutputEncoding = [Text.Encoding]::UTF8
+          $files = @(Get-ChildItem -Recurse -Filter test-results.trx -ErrorAction SilentlyContinue)
+          if ($files.Count -eq 0) {
+            Write-Host "::error::Keine test-results.trx gefunden — der Lauf ist vor den Tests gescheitert (Build? Restore?)."
+            exit 0
+          }
+
+          $found = 0
+          foreach ($file in $files) {
+            [xml]$trx = Get-Content $file.FullName -Encoding utf8
+            foreach ($result in @($trx.TestRun.Results.UnitTestResult)) {
+              if ($result.outcome -ne 'Failed') { continue }
+
+              $message = $result.Output.ErrorInfo.Message
+              $stack = $result.Output.ErrorInfo.StackTrace
+
+              # Den ersten Frame aus dem EIGENEN Testcode nehmen. Der oberste
+              # Frame ist sonst FluentAssertions-Interna und sagt nichts darüber,
+              # wo der Test steht.
+              $frame = ''
+              if ($stack) {
+                $lines = @($stack -split "`n" | Where-Object { $_.Trim() })
+                $own = $lines | Where-Object { $_ -match 'DnsPilot' } | Select-Object -First 1
+                $frame = (@($own, $lines[0]) | Where-Object { $_ } | Select-Object -First 1).Trim()
+              }
+
+              # Zeilenumbrüche als %0A escapen, sonst bricht die Annotation nach
+              # der ersten Zeile ab.
+              $body = (@($message, $frame) | Where-Object { $_ }) -join "`n"
+              $body = ($body -replace "`r", '') -replace "`n", '%0A'
+
+              Write-Host "::error title=$($result.testName)::$body"
+              $found++
+            }
+          }
+
+          if ($found -eq 0) {
+            Write-Host "::error::Testlauf rot, aber die TRX nennt keinen fehlgeschlagenen Test — bitte ins Job-Log sehen."
+          }
+
+      - name: Testergebnis als Artefakt
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: "**/test-results.trx"
+          retention-days: 7
