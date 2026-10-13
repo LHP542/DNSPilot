@@ -47,6 +47,14 @@ jobs:
       # Der Dateiname ist Teil der Schnittstelle: der Update-Checker liest die
       # Version daraus (siehe UpdateChannel.ParseVersionFromFileName). Wer ihn
       # ändert, macht das Ausrollen über den Netzwerkordner kaputt.
+      # Debug-Symbole gehören nicht ins Paket: SkiaSharp und HarfBuzz legen ihre
+      # nativen PDBs (zusammen über 100 MB) neben die EXE. Rekursiv löschen —
+      # ein "*.pdb" nur auf oberster Ebene reicht bei anderen Paketen nicht.
+      # Ohne das wog v0.1.0 73 MB statt rund 45 MB.
+      - name: Debug-Symbole entfernen
+        shell: pwsh
+        run: Get-ChildItem publish/win-x64 -Recurse -Filter *.pdb | Remove-Item -Force
+
       - name: ZIP packen
         shell: pwsh
         run: Compress-Archive -Path publish/win-x64/* -DestinationPath "DnsPilot-${{ steps.ver.outputs.v }}-win-x64.zip"
