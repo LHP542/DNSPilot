@@ -1,0 +1,7 @@
+# Shell-Skripte müssen auch bei core.autocrlf=true mit LF ausgecheckt werden,
+# sonst bricht bash am Wagenrücklauf ab (der Release-Job läuft auf Windows und
+# ruft scripts/extract-notes.sh). Muster aus QrCodeBuilder.
+*.sh text eol=lf
+*.md text eol=lf
+*.png binary
+*.ico binary

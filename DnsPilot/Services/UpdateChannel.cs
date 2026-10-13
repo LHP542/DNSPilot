@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace DnsPilot.Services;
@@ -76,6 +77,45 @@ internal static partial class UpdateChannel
         }
         return best;
     }
+
+    /// <summary>Name der Versionshinweise neben dem Paket, z. B. <c>DnsPilot-1.4.0-notes.md</c>.</summary>
+    public static string NotesFileName(Version version) => $"DnsPilot-{version.ToString(3)}-notes.md";
+
+    /// <summary>
+    /// Sammelt die Versionshinweise aller Versionen nach der installierten bis
+    /// einschließlich der neuen, neueste zuerst — wer zwei Versionen
+    /// überspringt, soll auch beide Änderungen sehen. Null, wenn keine
+    /// Notes-Datei dabei ist. Muster aus QrCodeBuilder.
+    /// </summary>
+    public static string? CollectReleaseNotes(string folder, Version installed, Version latest)
+    {
+        if (!Directory.Exists(folder)) return null;
+
+        var notes = Directory.EnumerateFiles(folder, "DnsPilot-*-notes.md")
+            .Select(file => (Version: ParseNotesVersion(Path.GetFileName(file)), File: file))
+            .Where(n => n.Version is not null && n.Version > installed && n.Version <= latest)
+            .OrderByDescending(n => n.Version)
+            .ToList();
+
+        if (notes.Count == 0) return null;
+
+        var text = new StringBuilder();
+        foreach (var (_, file) in notes)
+        {
+            if (text.Length > 0) text.Append("\n\n");
+            text.Append(File.ReadAllText(file).Trim());
+        }
+        return text.ToString();
+    }
+
+    private static Version? ParseNotesVersion(string fileName)
+    {
+        var match = NotesPattern().Match(fileName);
+        return match.Success && Version.TryParse(match.Groups["version"].Value, out var v) ? v : null;
+    }
+
+    [GeneratedRegex(@"^DnsPilot-(?<version>\d+\.\d+\.\d+)-notes\.md$", RegexOptions.IgnoreCase)]
+    private static partial Regex NotesPattern();
 
     /// <summary>
     /// Normalisiert eine Versionsangabe für den Vergleich: MinVer schreibt

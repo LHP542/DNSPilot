@@ -39,6 +39,7 @@
             <Rectangle Classes="divider-h" />
 
             <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <Button x:Name="WhatsNewButton" Content="Was ist neu" />
                 <Button x:Name="GithubButton" Content="Quellcode auf GitHub" />
                 <Button x:Name="LogButton" Content="Logdateien öffnen" />
             </WrapPanel>

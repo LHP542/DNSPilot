@@ -47,8 +47,23 @@ eine Adresse verweist. Genau das zeigt DNS-Pilot.
    entpacken (z. B. `C:\Tools\DnsPilot`).
 2. `DnsPilot.exe` starten. Eine .NET-Installation ist nicht nötig.
 
-Updates bietet DNS-Pilot beim Start an; installiert werden sie im
-Über-Fenster (ⓘ) mit **⬇ Update installieren**.
+### Updates
+
+DNS-Pilot holt Updates aus dem Netzwerkordner
+`\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot` — beim Start und danach
+**alle 30 Minuten**, solange es läuft (auch im Tray).
+
+- **Beim Start** öffnet ein gefundenes Update gleich den Update-Dialog.
+- **Im laufenden Betrieb** erscheint nur oben ein Hinweis mit der Schaltfläche
+  *Was ist neu? · Installieren …* — kein Fenster unterbricht die Arbeit.
+- Der **Update-Dialog zeigt, was sich geändert hat**, bei mehreren
+  übersprungenen Versionen alle Änderungen. *Jetzt installieren* ersetzt die
+  Programmdateien und startet neu; *Diese Version überspringen* lässt sie aus,
+  bis die nächste kommt.
+- **Was ist neu** im Über-Fenster (ⓘ) zeigt alle Versionshinweise jederzeit,
+  auch ohne Netzlaufwerk. Nach einem Update erscheinen sie einmal von selbst.
+
+![Update-Dialog](docs/update.png)
 
 ## Anmeldung
 
@@ -206,3 +221,15 @@ dotnet test
 
 Die Bildschirmfotos in `docs/` entstehen mit Demodaten aus dem Programm selbst:
 `DnsPilot.exe --screenshots docs` (Debug-Build).
+
+### Release ausrollen
+
+1. In `CHANGELOG.md` einen Abschnitt `## X.Y.Z — Datum` schreiben (für die
+   Nutzer, keine Interna). Ohne ihn bricht das Release ab.
+2. Tag setzen und pushen: `git tag -a vX.Y.Z -m "…" && git push origin vX.Y.Z`
+   (oder `scripts/release.ps1`). GitHub baut das ZIP und hängt die
+   Versionshinweise `DnsPilot-X.Y.Z-notes.md` ans Release.
+3. Auf den Share bringen: `scripts\publish-share.ps1 -Version X.Y.Z`
+   (mit `-Source <Ordner>`, wenn die Dateien von Hand geladen wurden — der
+   Proxy blockt ZIPs von GitHub). Das Skript prüft jede Datei gegen die
+   Prüfsumme des Releases und kopiert erst die Notes, dann das Paket.

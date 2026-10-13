@@ -72,7 +72,7 @@ internal static class ScreenshotTool
         var settings = new SettingsService(Path.Combine(temp, "settings.json"));
         settings.Load();
         settings.Current.Server = "DC01";
-        settings.Current.UpdateChannel = @"\dateiserver\software$\DnsPilot";
+        settings.Current.UpdateChannel = @"\\dateiserver\software$\DnsPilot";
 
         // Vorgeschichte, damit im Bild ein Aufräum-Kandidat zu sehen ist: der
         // verwaiste Scanner und der alte PC antworten seit Wochen nicht.
@@ -138,7 +138,20 @@ internal static class ScreenshotTool
         await ShowAndSettleAsync(settingsWindow);
         Save(settingsWindow, outputDirectory, "einstellungen.png");
 
-        foreach (var w in new Window[] { main, newHostWindow, deleteWindow, settingsWindow }) w.Close();
+        // --- Update-Dialog und „Was ist neu" (Hinweise aus dem echten Changelog) ---
+        string changelog = Changelog.LoadEmbedded();
+        var newest = Changelog.Sections(changelog)[0].Version;
+        var demoUpdate = new UpdateCheckResult(new Version(0, 1, 1), newest, @"\\dateiserver\software$\DnsPilot\demo.zip", null,
+            Changelog.Between(changelog, new Version(0, 1, 1), newest));
+        var updateDialog = new UpdateDialog(new UpdateService(settings), demoUpdate);
+        await ShowAndSettleAsync(updateDialog);
+        Save(updateDialog, outputDirectory, "update.png");
+
+        var whatsNew = new WhatsNewWindow("Was ist neu", "Alle Versionshinweise, neueste zuerst.", Changelog.All(changelog));
+        await ShowAndSettleAsync(whatsNew);
+        Save(whatsNew, outputDirectory, "was-ist-neu.png");
+
+        foreach (var w in new Window[] { main, newHostWindow, deleteWindow, settingsWindow, updateDialog, whatsNew }) w.Close();
 
         Log.Info("Bildschirmfotos in {0} erzeugt.", outputDirectory);
         if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes

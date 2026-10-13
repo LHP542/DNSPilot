@@ -29,4 +29,10 @@ public interface IShellServices
 
     /// <summary>Zeigt die Löschbestätigung modal.</summary>
     Task ShowDeleteDialogAsync(DeleteWindowViewModel viewModel);
+
+    /// <summary>Zeigt den Update-Dialog mit Versionshinweisen modal.</summary>
+    Task<UpdateDialogResult> ShowUpdateDialogAsync(UpdateCheckResult check);
+
+    /// <summary>Zeigt Versionshinweise („Was ist neu") modal.</summary>
+    Task ShowWhatsNewAsync(string headline, string subText, string markdown);
 }

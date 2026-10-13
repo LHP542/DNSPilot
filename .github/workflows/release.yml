@@ -32,6 +32,14 @@ jobs:
             echo "v=0.0.0-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Vor allem anderen: ohne Abschnitt in CHANGELOG.md bricht das Release hier
+      # ab, statt ein Paket ohne Versionshinweise auf den Share zu bringen.
+      # Muster aus QrCodeBuilder.
+      - name: Versionshinweise aus CHANGELOG.md
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: bash scripts/extract-notes.sh "${{ steps.ver.outputs.v }}"
+
       - name: Test
         run: dotnet test DnsPilot.Tests/DnsPilot.Tests.csproj -c Release
 
@@ -62,7 +70,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: windows
-          path: DnsPilot-*-win-x64.zip
+          path: |
+            DnsPilot-*-win-x64.zip
+            DnsPilot-*-notes.md
           retention-days: 1
 
   release:
@@ -75,14 +85,18 @@ jobs:
         with:
           path: dist
 
+      - name: Version ermitteln
+        id: ver
+        shell: bash
+        run: echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Die Versionshinweise sind zugleich der Release-Text.
+      # Ausrollen: scripts/publish-share.ps1 -Version X.Y.Z legt Notes und Paket
+      # geprüft (SHA-256 gegen dieses Release) auf den Update-Share
+      # \\samba01\542$\5424_IT-Basis-Dienste\DnsPilot.
       - name: GitHub-Release anlegen/aktualisieren
         uses: softprops/action-gh-release@v3
         with:
+          body_path: dist/windows/DnsPilot-${{ steps.ver.outputs.v }}-notes.md
           files: dist/**/*
-          generate_release_notes: true
           fail_on_unmatched_files: true
-          body: |
-            **Ausrollen im Firmennetz:** das ZIP unverändert nach
-            `\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot` kopieren.
-            DnsPilot erkennt die neue Version am Dateinamen und bietet sie
-            im Über-Fenster zur Installation an.

@@ -208,7 +208,7 @@ public partial class MainWindow : ChromeWindow, IShellServices
         try
         {
             var updates = _services.GetRequiredService<UpdateService>();
-            await new AboutWindow(updates, this).ShowDialog(this);
+            await new AboutWindow(updates, this, check => _viewModel?.SkipUpdate(check)).ShowDialog(this);
         }
         catch (Exception ex)
         {
@@ -225,6 +225,19 @@ public partial class MainWindow : ChromeWindow, IShellServices
 
     public Task ShowDeleteDialogAsync(DeleteWindowViewModel viewModel) =>
         new DeleteWindow(viewModel).ShowDialog(this);
+
+    public async Task<UpdateDialogResult> ShowUpdateDialogAsync(UpdateCheckResult check)
+    {
+        var updates = _services?.GetService<UpdateService>();
+        if (updates is null) return UpdateDialogResult.Later;
+
+        var dialog = new UpdateDialog(updates, check);
+        await dialog.ShowDialog(this);
+        return dialog.Result;
+    }
+
+    public Task ShowWhatsNewAsync(string headline, string subText, string markdown) =>
+        new WhatsNewWindow(headline, subText, markdown).ShowDialog(this);
 
     public async Task CopyToClipboardAsync(string text)
     {

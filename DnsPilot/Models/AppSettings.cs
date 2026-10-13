@@ -84,8 +84,24 @@ public sealed class AppSettings
     /// </summary>
     public string? UpdateChannel { get; set; } = @"\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot";
 
-    /// <summary>Beim Start automatisch nach Updates sehen.</summary>
+    /// <summary>
+    /// Automatisch nach Updates sehen: beim Start und danach alle
+    /// <see cref="UpdateCheckMinutes"/> Minuten. Der Name stammt aus der Zeit,
+    /// als nur beim Start geprüft wurde — bleibt für ältere Dateien so.
+    /// </summary>
     public bool CheckUpdatesOnStart { get; set; } = true;
+
+    /// <summary>Abstand der automatischen Update-Prüfung im laufenden Betrieb.</summary>
+    public const int UpdateCheckMinutes = 30;
+
+    /// <summary>Version, die der Nutzer mit „Diese Version überspringen" abgelehnt hat.</summary>
+    public string? SkippedUpdateVersion { get; set; }
+
+    /// <summary>
+    /// Zuletzt gestartete Version. Ist die laufende neuer, zeigt DNS-Pilot
+    /// einmal „Was ist neu". Null beim allerersten Start — dann nicht.
+    /// </summary>
+    public string? LastSeenVersion { get; set; }
 
     /// <summary>Zuletzt gesuchte Begriffe, neueste zuerst.</summary>
     public List<string> RecentSearches { get; set; } = [];
@@ -164,6 +180,8 @@ public sealed class AppSettings
         DefaultTtl = DefaultTtl,
         UpdateChannel = UpdateChannel,
         CheckUpdatesOnStart = CheckUpdatesOnStart,
+        SkippedUpdateVersion = SkippedUpdateVersion,
+        LastSeenVersion = LastSeenVersion,
         RecentSearches = [.. RecentSearches],
         FilterZone = FilterZone,
         FilterType = FilterType,

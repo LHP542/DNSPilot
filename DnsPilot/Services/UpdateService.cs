@@ -6,12 +6,22 @@ using NLog;
 
 namespace DnsPilot.Services;
 
+/// <summary>Wie der Nutzer den Update-Dialog verlassen hat.</summary>
+public enum UpdateDialogResult
+{
+    Later,
+    Skip,
+    Installing,
+}
+
 /// <summary>Ergebnis einer Update-Prüfung.</summary>
+/// <param name="ReleaseNotes">Versionshinweise aller übersprungenen Versionen, neueste zuerst; null wenn keine im Ordner liegen.</param>
 public sealed record UpdateCheckResult(
     Version CurrentVersion,
     Version? LatestVersion,
     string? PackagePath,
-    string? Problem)
+    string? Problem,
+    string? ReleaseNotes = null)
 {
     public bool UpdateAvailable => LatestVersion is not null && LatestVersion > CurrentVersion;
     public bool CanInstall => UpdateAvailable && PackagePath is not null;
@@ -72,14 +82,15 @@ public sealed class UpdateService(SettingsService settings)
         }
         else
         {
-            result = await Task.Run(() => CheckFolder(channel.Trim())).ConfigureAwait(false);
+            result = await Task.Run(() => CheckFolder(channel.Trim(), CurrentVersion)).ConfigureAwait(false);
         }
 
         _cached = result;
         return result;
     }
 
-    private UpdateCheckResult CheckFolder(string folder)
+    /// <summary>Kern der Prüfung ohne Cache und Assembly-Version — damit testbar.</summary>
+    internal static UpdateCheckResult CheckFolder(string folder, Version installed)
     {
         try
         {
@@ -90,17 +101,21 @@ public sealed class UpdateService(SettingsService settings)
                 // Störung — sonst steht im Log jedes mobilen Nutzers täglich ein
                 // Fehler, den niemand beheben kann.
                 Log.Debug("Im Update-Ordner {0} liegt kein Paket (oder er ist nicht erreichbar).", folder);
-                return new UpdateCheckResult(CurrentVersion, null, null,
+                return new UpdateCheckResult(installed, null, null,
                     "Der Update-Ordner ist nicht erreichbar.");
             }
 
-            Log.Info("Update-Prüfung: installiert {0}, im Ordner {1}.", CurrentVersion, newest.Value.Version);
-            return new UpdateCheckResult(CurrentVersion, newest.Value.Version, newest.Value.Path, null);
+            var latest = newest.Value.Version;
+            string? notes = latest > installed ? UpdateChannel.CollectReleaseNotes(folder, installed, latest) : null;
+
+            Log.Info("Update-Prüfung: installiert {0}, im Ordner {1}, Versionshinweise: {2}.",
+                installed, latest, notes is null ? "keine" : "ja");
+            return new UpdateCheckResult(installed, latest, newest.Value.Path, null, notes);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Log.Debug(ex, "Update-Ordner {0} nicht lesbar.", folder);
-            return new UpdateCheckResult(CurrentVersion, null, null,
+            return new UpdateCheckResult(installed, null, null,
                 "Auf den Update-Ordner konnte nicht zugegriffen werden.");
         }
     }

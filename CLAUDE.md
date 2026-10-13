@@ -29,7 +29,10 @@ Wie bei LDAPeek, und aus denselben Gründen — nicht ungefragt „nachziehen":
    `DnsServer`, das gibt es nur unter Windows. Ein Linux-Build wäre eine Attrappe.
 2. **Nur Deutsch**, keine EN+DE-Lokalisierung. Dienstliches Werkzeug.
 3. **Update über einen Netzwerkordner** statt GitHub Releases:
-   `\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot`.
+   `\\samba01\542$\5424_IT-Basis-Dienste\DnsPilot`. DNS-Pilot steht seit
+   2026-10-13 in der Liste der dienstlichen Ordner-Kanäle im Skill
+   (`references/autoupdate.md`); vorher war der Kanal ungeprüft aus LDAPeek
+   übernommen. Muster: QrCodeBuilder (Changelog → Notes → `publish-share.ps1`).
 
 Kein BMC-Link, keine `FUNDING.yml`, keine Zugangsgruppe wie in LDAPeek: wer
 keine DNS-Rechte hat, sieht ohnehin nichts.
@@ -113,6 +116,16 @@ Was gebaut ist:
 - **Schreibmodus** pro Sitzung, nicht gespeichert.
 - **Admin-Konto** optional mit Kennwort nur im Speicher oder DPAPI-geschützt.
 - CSV-Export, Tray, Single-Instance, Über-Fenster mit Self-Update.
+- **Updates mit Versionshinweisen** (seit 0.2.0): Prüfung beim Start und alle
+  30 Minuten (`MainWindowViewModel.Updates.cs`, `PeriodicTimer` im UI-Kontext).
+  Beim Start öffnet ein Fund den `UpdateDialog`, im Betrieb nur den Hinweis
+  oben. „Diese Version überspringen" → `SkippedUpdateVersion`. Notes kommen aus
+  `DnsPilot-X.Y.Z-notes.md` im Update-Ordner (alle übersprungenen Versionen,
+  `UpdateChannel.CollectReleaseNotes`). „Was ist neu" liest den als Ressource
+  eingebauten `CHANGELOG.md` (`Changelog`) — im Über-Fenster jederzeit, nach
+  einem Update einmal von selbst (`LastSeenVersion`). Darstellung: Formatierer
+  aus Checkmk Cockpit (`ReleaseNotesFormatter`), gezeichnet von
+  `ReleaseNotesRenderer` mit Style-Klassen `note-*`.
 
 ## Roadmap
 
@@ -150,14 +163,28 @@ DnsPilot/
                 SightingEvaluator, NewHostValidator, DeletionBackup,
                 RecordCsv, CredentialStore, DemoDnsServer (+ DemoHostProbe),
                 SettingsService, JsonFileStore, SecretProtection,
-                UpdateService, UpdateChannel
-  ViewModels/   MainWindowViewModel (+ .Checks.cs, .Changes.cs), RecordRow,
-                NewHostWindowViewModel, DeleteWindowViewModel,
+                UpdateService, UpdateChannel, Changelog, ReleaseNotesFormatter
+  ViewModels/   MainWindowViewModel (+ .Checks.cs, .Changes.cs, .Updates.cs),
+                RecordRow, NewHostWindowViewModel, DeleteWindowViewModel,
                 SettingsWindowViewModel
   Views/        ChromeWindow, MainWindow, NewHostWindow, DeleteWindow,
-                SettingsWindow, AboutWindow, TrayController,
+                SettingsWindow, AboutWindow, UpdateDialog, WhatsNewWindow,
+                ReleaseNotesRenderer, LayoutRules, TrayController,
                 SingleInstanceGuard, GlobalExceptionHandler, ScreenshotTool
 ```
+
+### Release ausrollen
+
+1. `CHANGELOG.md`: Abschnitt `## X.Y.Z — Datum` für die Nutzer (keine
+   Interna). Fehlt er, bricht `scripts/extract-notes.sh` im Release-Workflow ab.
+2. Tag `vX.Y.Z` pushen → Release mit ZIP und `DnsPilot-X.Y.Z-notes.md`
+   (zugleich Release-Text).
+3. `scripts\publish-share.ps1 -Version X.Y.Z [-Source <Ordner>]` → prüft gegen
+   die SHA-256 des Releases, kopiert erst Notes, dann das ZIP über `.tmp`.
+   Auf dem Arbeitslaptop blockt der Proxy ZIPs von GitHub — über den
+   Citrix-Browser laden und `-Source` angeben.
+4. `.gitattributes` hält `*.sh` auf LF — der Release-Job läuft auf Windows,
+   ein CRLF-Skript bräche an `set -o pipefail\r`.
 
 Die Logik liegt in `Services/` und ist ohne DNS-Server testbar.
 `PowerShellDnsServer` wird mit einer Attrappe für `IPowerShellRunner` getestet

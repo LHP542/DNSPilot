@@ -180,7 +180,7 @@
                                        Text="Netzwerkordner mit den Paketen DnsPilot-X.Y.Z-win-x64.zip. Es gewinnt immer die höchste Version, nicht die zuletzt kopierte Datei." />
                         </StackPanel>
 
-                        <CheckBox Content="Beim Start nach Updates sehen"
+                        <CheckBox Content="Automatisch nach Updates sehen (beim Start und alle 30 Minuten)"
                                   IsChecked="{Binding CheckUpdatesOnStart, Mode=TwoWay}" />
                     </StackPanel>
                 </Border>

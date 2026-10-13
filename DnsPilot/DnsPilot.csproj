@@ -11,6 +11,9 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
     <None Update="nlog.config" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Versionshinweise in die EXE: „Was ist neu" funktioniert damit auch ohne
+         Netzlaufwerk und für die installierte Version (siehe Services/Changelog). -->
+    <EmbeddedResource Include="../CHANGELOG.md" LogicalName="CHANGELOG.md" />
   </ItemGroup>
 
   <ItemGroup>

@@ -99,9 +99,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _inventorySummary = "Noch nichts geladen.";
 
-    [ObservableProperty]
-    private string? _updateNotice;
-
     /// <summary>Zuletzt gesuchte Begriffe für das Verlaufs-Dropdown.</summary>
     public ObservableCollection<string> RecentSearches { get; }
 
@@ -474,28 +471,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     // Start und Fehlerbehandlung
     // ------------------------------------------------------------------
 
-    /// <summary>Lädt beim Start und sieht nach einem Update.</summary>
+    /// <summary>
+    /// Lädt beim Start, zeigt nach einem Update einmal „Was ist neu", sieht nach
+    /// einem neuen Update und startet die Prüfung alle 30 Minuten
+    /// (MainWindowViewModel.Updates.cs).
+    /// </summary>
     public async Task InitializeAsync()
     {
         _sightings.Load();
         await ReloadAsync().ConfigureAwait(true);
-        if (_settings.Current.CheckUpdatesOnStart) await CheckForUpdateAsync().ConfigureAwait(true);
-    }
-
-    private async Task CheckForUpdateAsync()
-    {
-        try
-        {
-            var result = await _updates.CheckForUpdateAsync().ConfigureAwait(true);
-            UpdateNotice = result.UpdateAvailable
-                ? $"Version {result.LatestVersion} ist verfügbar — im Über-Fenster installierbar."
-                : null;
-        }
-        catch (Exception ex)
-        {
-            // Update-Fehler sind nie ein Grund, den Nutzer zu stören.
-            Log.Warn(ex, "Update-Prüfung beim Start fehlgeschlagen.");
-        }
+        await ShowWhatsNewIfUpdatedAsync().ConfigureAwait(true);
+        if (_settings.Current.CheckUpdatesOnStart) await CheckForUpdateAsync(atStartup: true).ConfigureAwait(true);
+        StartUpdateLoop();
     }
 
     /// <summary>Wird nach dem Speichern der Einstellungen gerufen.</summary>
@@ -522,6 +509,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public void PersistOnExit()
     {
         _scanCts?.Cancel();
+        _updateLoopCts?.Cancel();
         _sightings.Save();
         _settings.Save();
     }

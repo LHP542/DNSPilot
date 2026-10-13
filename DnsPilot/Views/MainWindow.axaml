@@ -62,9 +62,14 @@
                     Background="{DynamicResource KrosteAccentSoftBrush}"
                     BorderBrush="{DynamicResource KrosteAccentHoverBrush}"
                     IsVisible="{Binding UpdateNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                <TextBlock Text="{Binding UpdateNotice}"
-                           Foreground="{DynamicResource KrosteOnAccentBrush}"
-                           TextWrapping="Wrap" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding UpdateNotice}"
+                               Foreground="{DynamicResource KrosteOnAccentBrush}"
+                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Button Grid.Column="1" Classes="accent" Margin="12,0,0,0"
+                            Content="Was ist neu? · Installieren …"
+                            Command="{Binding ShowUpdateCommand}" />
+                </Grid>
             </Border>
 
             <!-- Fehlerzeile: inline statt Dialog -->

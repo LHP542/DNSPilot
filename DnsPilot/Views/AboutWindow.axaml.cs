@@ -19,6 +19,7 @@ public partial class AboutWindow : ChromeWindow
 
     private readonly UpdateService? _updates;
     private readonly IShellServices? _shell;
+    private readonly Action<UpdateCheckResult>? _skip;
     private UpdateCheckResult? _lastCheck;
 
     /// <summary>Parameterloser Konstruktor für den XAML-Designer.</summary>
@@ -27,16 +28,22 @@ public partial class AboutWindow : ChromeWindow
         InitializeComponent();
     }
 
-    internal AboutWindow(UpdateService updates, IShellServices shell) : this()
+    /// <param name="skip">Wird gerufen, wenn der Nutzer im Update-Dialog „Diese Version überspringen" wählt.</param>
+    internal AboutWindow(UpdateService updates, IShellServices shell, Action<UpdateCheckResult>? skip = null) : this()
     {
         _updates = updates;
         _shell = shell;
+        _skip = skip;
 
         VersionText.Text = $"Version {updates.CurrentVersionDisplay}";
         ChannelText.Text = "Updates kommen aus dem Netzwerkordner, der in den Einstellungen hinterlegt ist.";
 
         CheckButton.Click += OnCheckUpdate;
         InstallButton.Click += OnInstallUpdate;
+        WhatsNewButton.Click += (_, _) => _ = new WhatsNewWindow(
+            "Was ist neu",
+            $"Alle Versionshinweise bis {updates.CurrentVersionDisplay}, neueste zuerst.",
+            Changelog.All(Changelog.LoadEmbedded())).ShowDialog(this);
         GithubButton.Click += (_, _) => _ = shell.OpenExternalAsync(GithubUrl);
         LogButton.Click += (_, _) => _ = shell.OpenExternalAsync(LogFolder());
     }
@@ -62,6 +69,7 @@ public partial class AboutWindow : ChromeWindow
                 UpdateResult.Text = $"Version {_lastCheck.LatestVersion} ist verfügbar "
                                     + $"(installiert: {_lastCheck.CurrentVersion}).";
                 InstallButton.IsVisible = _lastCheck.CanInstall;
+                InstallButton.Content = "Was ist neu? · Installieren …";
             }
             else if (_lastCheck.Problem is { } problem)
             {
@@ -83,42 +91,24 @@ public partial class AboutWindow : ChromeWindow
         }
     }
 
+    /// <summary>
+    /// Öffnet den Update-Dialog mit Versionshinweisen. Installiert wird dort —
+    /// so gibt es genau einen Weg zum Austausch, und er zeigt immer, was sich ändert.
+    /// </summary>
     private async void OnInstallUpdate(object? sender, RoutedEventArgs e)
     {
         if (_updates is null || _lastCheck is null) return;
 
-        InstallButton.IsEnabled = false;
-        CheckButton.IsEnabled = false;
-        UpdateProgress.IsVisible = true;
-
-        var progress = new Progress<string>(text => UpdateResult.Text = text);
-
         try
         {
-            bool started = await _updates.DownloadAndApplyAsync(_lastCheck, progress);
-            if (!started)
-            {
-                UpdateResult.Text = "Das Update konnte nicht vorbereitet werden. Details stehen im Log.";
-                return;
-            }
-
-            UpdateResult.Text = "DNS-Pilot wird beendet und neu gestartet …";
-
-            // PFLICHT: Das Austausch-Skript wartet per Wait-Process auf diesen
-            // Prozess. Ohne das Beenden wartet es endlos, und die Anzeige bliebe
-            // genau hier stehen.
-            UpdateService.TerminateForUpdate();
+            var dialog = new UpdateDialog(_updates, _lastCheck);
+            await dialog.ShowDialog(this);
+            if (dialog.Result == UpdateDialogResult.Skip) _skip?.Invoke(_lastCheck);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Update-Installation fehlgeschlagen.");
-            UpdateResult.Text = "Das Update ist fehlgeschlagen. Details stehen im Log.";
-        }
-        finally
-        {
-            UpdateProgress.IsVisible = false;
-            InstallButton.IsEnabled = true;
-            CheckButton.IsEnabled = true;
+            Log.Error(ex, "Update-Dialog aus dem Über-Fenster fehlgeschlagen.");
+            UpdateResult.Text = "Der Update-Dialog konnte nicht geöffnet werden. Details stehen im Log.";
         }
     }
 }
