@@ -6,7 +6,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using DnsPilot.Services;
 using DnsPilot.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +58,10 @@ public partial class MainWindow : ChromeWindow, IShellServices
         RecordsGrid.SelectionChanged += (_, _) =>
             viewModel.SelectedRows = RecordsGrid.SelectedItems.OfType<RecordRow>().ToList();
 
+        // Rechtsklick auf eine nicht markierte Zeile markiert sie, bevor das
+        // Kontextmenü aufgeht — sonst wirkte „Löschen …" auf die alte Auswahl.
+        RecordsGrid.AddHandler(PointerPressedEvent, OnGridPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+
         RecordsGrid.Sorting += (_, e) => _sortColumn = e.Column;
         viewModel.PropertyChanging += (_, e) =>
         {
@@ -86,6 +92,17 @@ public partial class MainWindow : ChromeWindow, IShellServices
             if (_settings is not null) CaptureLayout(_settings.Current);
             viewModel.PersistOnExit();
         };
+    }
+
+    private void OnGridPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(RecordsGrid).Properties.IsRightButtonPressed) return;
+
+        var row = (e.Source as Visual)?.FindAncestorOfType<DataGridRow>(includeSelf: true);
+        if (row?.DataContext is RecordRow item && !RecordsGrid.SelectedItems.Contains(item))
+        {
+            RecordsGrid.SelectedItem = item;
+        }
     }
 
     // ------------------------------------------------------------------

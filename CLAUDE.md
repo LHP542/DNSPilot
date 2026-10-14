@@ -103,9 +103,8 @@ Was gebaut ist:
   übernimmt die TTL des A und setzt bei dynamischem A `-AgeRecord`, damit der
   PTR nicht als statischer Überrest zurückbleibt. Gegen die echten DCs noch
   nicht gelaufen.
-- **Alias umbiegen** (seit 0.4.0, Schreibmodus): Knopf in der Detailansicht,
-  wenn genau ein CNAME markiert ist (bewusst nicht in der ÄNDERN-Karte — dort
-  bräche die Kartenreihe bei 1440 px um). `RetargetCnameWindow` prüft live per
+- **Alias umbiegen** (seit 0.4.0, Schreibmodus): im Kontextmenü und als Knopf
+  in der Detailansicht, wenn genau ein CNAME markiert ist. `RetargetCnameWindow` prüft live per
   `CnameTargetValidator` (Kurzname bekommt die Zone des Alias, nicht
   vorhandenes Ziel bestätigen, Alias als Ziel warnt, Schleife blockiert).
   Vorher Sicherung über `DeletionBackup`. `IDnsServer.RetargetCnameAsync`:
@@ -113,6 +112,12 @@ Was gebaut ist:
   ändern, `Set-DnsServerResourceRecord -OldInputObject -NewInputObject`
   (Muster aus der Microsoft-Doku) — der Alias ist nie weg. Gegen die echten
   DCs noch nicht gelaufen.
+- **Kontextmenü der Tabelle** (seit 0.4.0): Auswahl prüfen, PTR anlegen,
+  Alias umbiegen, Löschen, „Änderungen erlauben“. Einträge, die zur Auswahl
+  nicht passen, sind ausgeblendet (`HasPtrFixes`, `SelectionIsCname`). Die
+  ÄNDERN-Karte hat nur noch Schalter, Neuer Host, Sicherungen — Lars: „das
+  Ribbon wird ganz schön voll“. Neue Aktionen auf Einträge gehören ins
+  Kontextmenü, nicht in die Karten.
 - **Widerspruch PTR/A** ist nur eine Info, wenn alle Beteiligten dynamisch
   sind (Notebook hat das Netz gewechselt), sonst eine Warnung.
 - **Scavenging in der Domäne** (geprüft 2026-10-13): läuft auf einem der DCs
@@ -303,6 +308,12 @@ lockert, sollte vorher mit dem Endpoint-Schutz-Team sprechen.
   überstimmt ein altes Layout jede spätere Standardbreite im Code. Ob das
   Avalonia-DataGrid eine gezogene Spalte wirklich auf eine absolute Breite
   umstellt, ist nur angenommen, nicht gemessen (Stand 2026-10-13).
+- **Rechtsklick und Auswahl:** ob das Avalonia-DataGrid bei Rechtsklick selbst
+  markiert, ist nicht gemessen (Stand 2026-10-14). `MainWindow.OnGridPointerPressed` (Tunnel, `handledEventsToo`) markiert eine
+  nicht markierte Zeile vor dem Kontextmenü, sonst wirkte „Löschen …“ auf die
+  alte Auswahl. Eine bestehende Mehrfachauswahl bleibt, wenn in sie geklickt
+  wird. `InputGesture` am MenuItem zeigt Tastennamen englisch („Delete“) —
+  deshalb weggelassen.
 - **`IReadOnlyList.Count` im Binding vermeiden** — dafür gibt es `HasFindings`;
   die Eigenschaft liegt auf dem Basis-Interface.
 - Übrige Fallen (WrapPanel statt StackPanel, `--` in XAML-Kommentaren,

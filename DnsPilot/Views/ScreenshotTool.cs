@@ -126,6 +126,16 @@ internal static class ScreenshotTool
         await SettleAsync(main, rounds: 8);
         Save(main, outputDirectory, "ptr-fehlt.png");
 
+        // --- Kontextmenü der Tabelle ------------------------------------------
+        vm.SelectedRows = vm.VisibleRows.Take(1).ToList();
+        if (main.RecordsGrid.ContextMenu is { } menu)
+        {
+            menu.Open(main.RecordsGrid);
+            await SettleAsync(main, rounds: 6);
+            Save(menu, outputDirectory, "kontextmenue.png");
+            menu.Close();
+        }
+
         // --- Neuer Host --------------------------------------------------------
         var newHost = new NewHostWindowViewModel(server, vm.Inventory, 3600, "10.10.2.33")
         {
@@ -205,7 +215,7 @@ internal static class ScreenshotTool
         }
     }
 
-    private static void Save(Window window, string directory, string fileName)
+    private static void Save(Control window, string directory, string fileName)
     {
         var size = new PixelSize(
             Math.Max(1, (int)window.Bounds.Width),

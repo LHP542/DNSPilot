@@ -164,6 +164,13 @@ verschrotteter Rechner. Im Zweifel die TCP-Prüfung einschalten oder nachfragen.
 Ändern ist gesperrt, bis **Änderungen erlauben** angehakt ist. Beim nächsten
 Start ist die Sperre wieder an.
 
+Was sich auf vorhandene Einträge bezieht, steht im **Kontextmenü der Tabelle**
+(Rechtsklick): Auswahl prüfen, PTR anlegen, Alias umbiegen, Löschen — und
+„Änderungen erlauben“ zum Umschalten. Ein Rechtsklick auf eine nicht markierte
+Zeile markiert sie vorher. Angezeigt wird nur, was zur Auswahl passt.
+
+![Kontextmenü](docs/kontextmenue.png)
+
 **＋ Neuer Host** legt einen statischen A-Eintrag an und, wenn es für das Netz
 eine Reverse-Zone gibt, den passenden PTR. Ist die Adresse schon vergeben oder
 der Name schon da, muss das ausdrücklich bestätigt werden. Wer vorher nach
@@ -173,17 +180,17 @@ einem Netz gesucht hat, bekommt die erste freie Adresse vorgeschlagen.
 
 **PTR anlegen** ergänzt den fehlenden PTR für die markierten A-Einträge — auch
 für viele auf einmal (z. B. nach „Nur Auffälligkeiten“ alle mit *PTR fehlt*
-markieren). Die Schaltfläche steht auch rechts in den Details unter *Befunde*.
-Angeboten wird sie nur, wenn es für die Adresse noch gar keinen PTR gibt, die
+markieren, Rechtsklick). Der Befehl steht auch als Schaltfläche rechts in den
+Details unter *Befunde*. Angeboten wird er nur, wenn es für die Adresse noch gar keinen PTR gibt, die
 Reverse-Zone beschreibbar ist und kein anderer Name auf dieselbe Adresse zeigt
 — sonst wäre offen, welcher Name in den PTR gehört. Der PTR bekommt die TTL des
 A-Eintrags; ist der A-Eintrag dynamisch, altert der PTR mit und wird mit ihm
-zusammen aufgeräumt. Der Tooltip der Schaltfläche listet, was angelegt wird.
+zusammen aufgeräumt. Der Tooltip der Schaltfläche in den Details listet, was angelegt wird.
 
 ![PTR fehlt](docs/ptr-fehlt.png)
 
-**Alias umbiegen …** steht rechts in den Details, sobald genau ein CNAME
-markiert ist — etwa bei *CNAME ins Leere*, wenn der Zielhost umbenannt oder
+**Alias umbiegen …** steht im Kontextmenü und rechts in den Details, sobald
+genau ein CNAME markiert ist — etwa bei *CNAME ins Leere*, wenn der Zielhost umbenannt oder
 ersetzt wurde. Name und TTL des Alias bleiben, nur das Ziel ändert sich; der
 Alias verschwindet dabei nicht kurz. Das neue Ziel wird beim Tippen geprüft
 (Namensvorschläge aus den eigenen Zonen, ohne Punkt gilt die Zone des Alias):
@@ -193,7 +200,7 @@ bisherige Eintrag landet vorher in derselben Sicherung wie beim Löschen.
 
 ![Alias umbiegen](docs/alias-umbiegen.png)
 
-**Löschen …** (oder Entf in der Tabelle) zeigt die markierten Einträge noch
+**Löschen …** (Kontextmenü oder Entf in der Tabelle) zeigt die markierten Einträge noch
 einmal einzeln. Zu einem A-Eintrag wird der PTR, der auf ihn zeigt, mit
 vorgeschlagen. Gelöscht wird erst nach dem Haken bei *Ich habe die Liste
 geprüft*.

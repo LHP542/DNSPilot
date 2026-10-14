@@ -152,12 +152,9 @@
                         <TextBlock Text="ÄNDERN" Classes="section-label" />
                         <WrapPanel ItemSpacing="8" LineSpacing="8">
                             <CheckBox Content="Änderungen erlauben"
-                                      ToolTip.Tip="Schreibschutz für diese Sitzung aufheben. Beim nächsten Start ist er wieder an."
+                                      ToolTip.Tip="Schreibschutz für diese Sitzung aufheben. Beim nächsten Start ist er wieder an. Einträge ändern und löschen per Rechtsklick in der Tabelle."
                                       IsChecked="{Binding AllowChanges, Mode=TwoWay}" />
                             <Button Classes="accent" Content="＋ Neuer Host" Command="{Binding NewHostCommand}" />
-                            <Button Content="{Binding PtrFixLabel}" Command="{Binding CreateMissingPtrCommand}"
-                                    ToolTip.Tip="{Binding PtrFixTip}" />                            <Button Classes="danger" Content="Löschen …" Command="{Binding DeleteSelectedCommand}"
-                                    ToolTip.Tip="Markierte Einträge löschen (Entf) — mit Bestätigung und Sicherung" />
                             <Button Classes="ghost" Content="Sicherungen" Command="{Binding OpenBackupFolderCommand}"
                                     ToolTip.Tip="Ordner mit den Sicherungen gelöschter Einträge öffnen" />
                         </WrapPanel>
@@ -207,6 +204,22 @@
                                   CanUserSortColumns="True"
                                   CanUserResizeColumns="True"
                                   GridLinesVisibility="Horizontal">
+                            <!-- Alles, was sich auf markierte Einträge bezieht, per Rechtsklick.
+                                 Rechtsklick auf eine nicht markierte Zeile markiert sie (MainWindow.axaml.cs). -->
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Auswahl prüfen" Command="{Binding ScanSelectedCommand}" />
+                                    <Separator />
+                                    <MenuItem Header="{Binding PtrFixLabel}" Command="{Binding CreateMissingPtrCommand}"
+                                              IsVisible="{Binding HasPtrFixes}" />
+                                    <MenuItem Header="Alias umbiegen …" Command="{Binding RetargetCnameCommand}"
+                                              IsVisible="{Binding SelectionIsCname}" />
+                                    <MenuItem Header="Löschen …" Command="{Binding DeleteSelectedCommand}" />
+                                    <Separator />
+                                    <MenuItem Header="Änderungen erlauben" ToggleType="CheckBox"
+                                              IsChecked="{Binding AllowChanges, Mode=TwoWay}" />
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="DNS" Width="48" SortMemberPath="Severity">
                                     <DataGridTemplateColumn.CellTemplate>

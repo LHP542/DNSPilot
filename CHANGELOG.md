@@ -11,10 +11,21 @@ Erlaubt sind Überschriften (`###`), Absätze, Aufzählungen, `**fett**`,
 
 ## 0.4.0 — 2026-10-14
 
+### Ändern per Rechtsklick
+
+- Was sich auf markierte Einträge bezieht, steht jetzt im **Kontextmenü der
+  Tabelle**: Auswahl prüfen, PTR anlegen, Alias umbiegen, Löschen und
+  „Änderungen erlauben“. Ein Rechtsklick auf eine nicht markierte Zeile
+  markiert sie vorher.
+- Die Karte *Ändern* oben enthält nur noch den Schalter, **＋ Neuer Host** und
+  **Sicherungen** — die Leiste ist wieder übersichtlich. Löschen geht
+  weiterhin auch mit Entf.
+
 ### Alias umbiegen
 
 - Ein CNAME lässt sich jetzt auf ein neues Ziel umbiegen: **Alias umbiegen …**
-  rechts in den Details, sobald genau ein CNAME markiert ist (Schreibmodus).
+  im Kontextmenü und rechts in den Details, sobald genau ein CNAME markiert
+  ist (Schreibmodus).
   Typischer Fall: *CNAME ins Leere*, weil der Zielhost umbenannt oder ersetzt
   wurde.
 - Name und TTL bleiben, nur das Ziel ändert sich — der Alias ist dabei nie
