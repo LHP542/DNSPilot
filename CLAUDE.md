@@ -62,7 +62,7 @@ Analyzer an. Ausgeliefert werden nur `DnsPilot.exe` und `nlog.config`
 
 ## Aktueller Stand
 
-**v0.3.0 veröffentlicht und im Update-Ordner, 2026-10-14; 0.4.0 vorbereitet (CHANGELOG), nicht getaggt** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
+**v0.4.0 veröffentlicht und im Update-Ordner, 2026-10-14** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
 CI und Release-Workflow grün; das ZIP von v0.1.0 enthält noch die PDBs, ab
 v0.1.1 nicht mehr) — 326 Tests grün (Stand 0.4.0), Oberfläche per Bildschirmfoto-Modus mit
 Demodaten geprüft. Der DNS-Zugriff ist von WMI auf PowerShell umgestellt
