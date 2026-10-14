@@ -18,6 +18,15 @@ public interface IDnsServer
     Task<IReadOnlyList<DnsRecord>> CreateHostAsync(NewHostRequest request, CancellationToken token);
 
     /// <summary>
+    /// Legt für einen bestehenden A-Eintrag den fehlenden PTR in
+    /// <paramref name="reverseZone"/> an, mit derselben TTL. Ist der A-Eintrag
+    /// dynamisch, altert der PTR mit (Scavenging räumt beide gemeinsam weg) —
+    /// ein statischer PTR zu einem dynamischen Host bliebe sonst als Überrest
+    /// zurück. Liefert den angelegten Eintrag.
+    /// </summary>
+    Task<DnsRecord> CreatePtrAsync(DnsRecord host, string reverseZone, CancellationToken token);
+
+    /// <summary>
     /// Löscht genau diesen Eintrag. Wirft <see cref="DnsAccessException"/>, wenn
     /// er auf dem Server nicht mehr existiert.
     /// </summary>

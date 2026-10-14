@@ -146,6 +146,30 @@ public class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task PTR_anlegen_fuer_die_Auswahl_nur_im_Schreibmodus_und_nur_wo_eindeutig()
+    {
+        await _vm.ReloadCommand.ExecuteAsync(null);
+        RecordRow Row(string name) => _vm.VisibleRows.Single(r => r.Name.StartsWith(name, StringComparison.Ordinal));
+
+        // kamera-hof: PTR fehlt. altes-nas: doppelte Adresse — welcher Name in
+        // den PTR gehört, ist offen. gaeste-wlan: keine Reverse-Zone.
+        _vm.SelectedRows = [Row("kamera-hof"), Row("altes-nas"), Row("gaeste-wlan")];
+
+        _vm.PtrFixes.Select(f => f.Host.OwnerName).Should().Equal("kamera-hof.musterstadt.beispiel");
+        _vm.CreateMissingPtrCommand.CanExecute(null).Should().BeFalse("der Schreibmodus ist aus");
+        _vm.PtrFixTip.Should().Contain("Änderungen erlauben");
+
+        _vm.AllowChanges = true;
+        await _vm.CreateMissingPtrCommand.ExecuteAsync(null);
+
+        _server.Records.Should().ContainSingle(r => r.Type == RecordType.PTR && r.Data == "kamera-hof.musterstadt.beispiel")
+            .Which.Zone.Should().Be("10.10.in-addr.arpa");
+        Row("kamera-hof").Findings.Should().NotContain(f => f.Kind == FindingKind.MissingPtr);
+        _vm.StatusText.Should().Be("PTR angelegt: 10.10.2.40 → kamera-hof.musterstadt.beispiel.");
+        _vm.PtrFixes.Should().BeEmpty("der PTR existiert jetzt");
+    }
+
+    [Fact]
     public async Task Ein_bereits_verschwundener_Eintrag_wird_gemeldet_statt_still_uebergangen()
     {
         await _vm.ReloadCommand.ExecuteAsync(null);

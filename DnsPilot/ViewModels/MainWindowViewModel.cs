@@ -85,6 +85,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ScanSelectedCommand))]
     [NotifyCanExecuteChangedFor(nameof(NewHostCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -295,6 +296,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         int errors = _allRows.Count(r => r.HasError);
         int warnings = _allRows.Count(r => r.HasWarning);
         InventorySummary = $"{inventory.Zones.Count} Zonen · {_allRows.Count:N0} Einträge · {errors} Fehler · {warnings} Warnungen";
+        RefreshPtrFixes();
 
         ApplyFilter();
     }

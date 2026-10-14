@@ -37,6 +37,8 @@ eine Adresse verweist. Genau das zeigt DNS-Pilot.
   172.16.1.11?" oder „was liegt in 172.16.1.0/24, und was ist dort frei?"
 - **Hosts anlegen** — A und PTR in einem Schritt, mit Warnung bei bereits
   vergebener Adresse.
+- **Fehlenden PTR per Knopf anlegen** — für einen oder viele markierte
+  A-Einträge auf einmal, aber nur, wo eindeutig ist, welcher Name hineingehört.
 - **Einträge löschen** — mit Bestätigungsliste, passendem PTR als Vorschlag
   und einer Sicherung jedes gelöschten Eintrags.
 
@@ -126,7 +128,15 @@ A- oder PTR-Eintrag in die Zwischenablage.
 | **DNS** | in Ordnung | Hinweis | Warnung | Fehler | – |
 | **Netz** | ungeprüft | – | zuletzt nicht erreicht | Aufräum-Kandidat | online |
 
-Die Spalte *Hinweise* und die Details rechts sagen, was genau auffällt.
+Die Spalte *Hinweise* sagt kurz, was auffällt. Rechts in den Details steht zu
+jedem Befund ausführlicher, **was er bedeutet**, **welche Auswirkung** er hat
+(und warum er als Hinweis, Warnung oder Fehler zählt) und **was zu tun ist** —
+zum Beispiel, was ein PTR überhaupt ist und warum ein Widerspruch zwischen PTR
+und A mit einem statischen Eintrag nicht von selbst verschwindet.
+
+Sortieren per Klick auf die Spaltenüberschrift; die Sortierung und die
+Markierung bleiben erhalten, wenn die Liste nach einer Prüfung, einem Filter
+oder einer Änderung neu aufgebaut wird.
 
 ### Prüfen
 
@@ -158,6 +168,17 @@ der Name schon da, muss das ausdrücklich bestätigt werden. Wer vorher nach
 einem Netz gesucht hat, bekommt die erste freie Adresse vorgeschlagen.
 
 ![Neuer Host](docs/neuer-host.png)
+
+**PTR anlegen** ergänzt den fehlenden PTR für die markierten A-Einträge — auch
+für viele auf einmal (z. B. nach „Nur Auffälligkeiten“ alle mit *PTR fehlt*
+markieren). Die Schaltfläche steht auch rechts in den Details unter *Befunde*.
+Angeboten wird sie nur, wenn es für die Adresse noch gar keinen PTR gibt, die
+Reverse-Zone beschreibbar ist und kein anderer Name auf dieselbe Adresse zeigt
+— sonst wäre offen, welcher Name in den PTR gehört. Der PTR bekommt die TTL des
+A-Eintrags; ist der A-Eintrag dynamisch, altert der PTR mit und wird mit ihm
+zusammen aufgeräumt. Der Tooltip der Schaltfläche listet, was angelegt wird.
+
+![PTR fehlt](docs/ptr-fehlt.png)
 
 **Löschen …** (oder Entf in der Tabelle) zeigt die markierten Einträge noch
 einmal einzeln. Zu einem A-Eintrag wird der PTR, der auf ihn zeigt, mit

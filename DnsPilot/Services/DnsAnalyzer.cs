@@ -241,7 +241,7 @@ public sealed class DnsAnalyzer(int staleAfterDays)
     /// Einträge an der Zonenspitze („lhp.intern" → DC-Adresse) und die
     /// AD-Dienstnamen gehören dem Domänencontroller und sind keine Hosts.
     /// </summary>
-    private static bool IsZoneApexOrAdService(DnsRecord record, DnsInventory inventory)
+    internal static bool IsZoneApexOrAdService(DnsRecord record, DnsInventory inventory)
     {
         if (record.OwnerName.Equals(record.Zone, StringComparison.OrdinalIgnoreCase)) return true;
 

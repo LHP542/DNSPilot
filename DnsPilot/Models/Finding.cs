@@ -65,5 +65,14 @@ public enum FindingKind
 /// <summary>Ein einzelner Befund zu einem Eintrag.</summary>
 public sealed record Finding(FindingKind Kind, Severity Severity, string Text)
 {
+    /// <summary>Bedeutung, Auswirkung und Abhilfe für die Detailansicht.</summary>
+    public FindingHelp Help => FindingHelp.For(Kind, Severity);
+
+    public bool IsError => Severity == Severity.Error;
+
+    public bool IsWarning => Severity == Severity.Warning;
+
+    public bool IsInfo => Severity == Severity.Info;
+
     public override string ToString() => Text;
 }

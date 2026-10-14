@@ -62,9 +62,9 @@ Analyzer an. Ausgeliefert werden nur `DnsPilot.exe` und `nlog.config`
 
 ## Aktueller Stand
 
-**v0.1.0 veröffentlicht, 2026-10-13** (Release mit `DnsPilot-0.1.0-win-x64.zip`,
+**v0.2.0 veröffentlicht, 2026-10-13; 0.3.0 vorbereitet (CHANGELOG), nicht getaggt** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
 CI und Release-Workflow grün; das ZIP von v0.1.0 enthält noch die PDBs, ab
-v0.1.1 nicht mehr) — 209 Tests grün, Oberfläche per Bildschirmfoto-Modus mit
+v0.1.1 nicht mehr) — 312 Tests grün (Stand 0.3.0), Oberfläche per Bildschirmfoto-Modus mit
 Demodaten geprüft. Der DNS-Zugriff ist von WMI auf PowerShell umgestellt
 (siehe „Warum PowerShell").
 
@@ -92,6 +92,17 @@ Was gebaut ist:
   zuständig ist — Clients sehen ihn nie).
   DC-Einträge (Zonenspitze, DomainDnsZones, ForestDnsZones, gc, `_msdcs`)
   sind von „doppelte Adresse" ausgenommen.
+- **Erklärung je Befund** (`FindingHelp`, seit 0.3.0): Titel, Bedeutung,
+  Auswirkung, Was tun — in der Detailansicht unter jedem Befund. Für
+  `PtrMismatch` je nach Gewicht (Info/Warnung) ein eigener Text; ein Test
+  sichert, dass jede `FindingKind` eine Erklärung hat.
+- **PTR anlegen** (seit 0.3.0, Schreibmodus): für die markierten A-Einträge,
+  auch viele auf einmal. `PtrFixPlanner` bietet es nur an, wo es eindeutig ist
+  (kein PTR auf der Adresse, Reverse-Zone beschreibbar, kein zweiter Name auf
+  der Adresse, kein DC-/Zonenspitzen-Eintrag). `IDnsServer.CreatePtrAsync`
+  übernimmt die TTL des A und setzt bei dynamischem A `-AgeRecord`, damit der
+  PTR nicht als statischer Überrest zurückbleibt. Gegen die echten DCs noch
+  nicht gelaufen.
 - **Widerspruch PTR/A** ist nur eine Info, wenn alle Beteiligten dynamisch
   sind (Notebook hat das Netz gewechselt), sonst eine Warnung.
 - **Scavenging in der Domäne** (geprüft 2026-10-13): läuft auf einem der DCs
@@ -153,13 +164,13 @@ Kandidaten, die beim Bauen aufgefallen sind — nichts davon ist zugesagt:
 
 ```
 DnsPilot/
-  Models/       DnsRecord (+ RecordType, DnsZone, ZoneKind), Finding,
+  Models/       DnsRecord (+ RecordType, DnsZone, ZoneKind), Finding (+ FindingHelp),
                 HostSighting (+ Reachability), DnsServerInfo (+ DnsSnapshot,
                 NewHostRequest), AppSettings
   Services/     PowerShellDnsServer (IDnsServer), PowerShellRunner,
                 DnsRecordMapper, DnsInventory,
                 DnsAnalyzer, SearchQuery, IpRange (+ Ipv4), ReverseZone,
-                ScanService, HostProbe (IHostProbe), SightingStore,
+                ScanService, HostProbe (IHostProbe), SightingStore, PtrFixPlanner,
                 SightingEvaluator, NewHostValidator, DeletionBackup,
                 RecordCsv, CredentialStore, DemoDnsServer (+ DemoHostProbe),
                 SettingsService, JsonFileStore, SecretProtection,
@@ -251,7 +262,19 @@ lockert, sollte vorher mit dem Endpoint-Schutz-Team sprechen.
   das `Padding` im Style vermuten lässt. Am Bildschirmfoto prüfen, nicht
   schätzen.
 - **Sortierung** über `SortMemberPath`: `NameSortKey` (PTR numerisch hinter
-  die Hosts), `DataSortKey` (Adressen numerisch), `TimestampSortKey`.
+  die Hosts), `DataSortKey` (Adressen numerisch), `TimestampSortKey`. Jede
+  Spalte braucht einen `SortMemberPath`.
+- **Neue `ItemsSource` verwirft Sortierung und Mehrfachauswahl.** Jedes
+  `ApplyFilter` setzt eine neue `VisibleRows`-Liste; das DataGrid baut eine
+  neue Sicht ohne Sortierung, und das anschließende Setzen von `SelectedRow`
+  kürzt die Auswahl auf eine Zeile. Gemeldet als „nach Auswahl prüfen springt
+  die Liste zurück" (bei „Nur Auffälligkeiten" filtert die Prüfung neu).
+  `MainWindow.CaptureGridState`/`RestoreGridState`: vor dem Wechsel
+  (`PropertyChanging`) die per Klick sortierte Spalte (`Sorting`-Event — Netz
+  und Erreichbarkeit teilen sich einen Pfad) und die Auswahl merken, danach
+  per `Dispatcher.Post` `column.Sort(direction)` und Auswahl zurück. Per
+  Bildschirmfoto mit Gegenprobe geprüft (ohne Fix: Grundreihenfolge, eine
+  Zeile markiert).
 - **ComboBox-Liste neu aufbauen:** Beim `Clear()` schreibt die ComboBox
   `null` in die gebundene Auswahl. Wer darauf sofort mit einem Ersatzwert
   reagiert, setzt ihn, während die Liste leer ist — die spätere Zuweisung

@@ -155,6 +155,8 @@
                                       ToolTip.Tip="Schreibschutz für diese Sitzung aufheben. Beim nächsten Start ist er wieder an."
                                       IsChecked="{Binding AllowChanges, Mode=TwoWay}" />
                             <Button Classes="accent" Content="＋ Neuer Host" Command="{Binding NewHostCommand}" />
+                            <Button Content="{Binding PtrFixLabel}" Command="{Binding CreateMissingPtrCommand}"
+                                    ToolTip.Tip="{Binding PtrFixTip}" />
                             <Button Classes="danger" Content="Löschen …" Command="{Binding DeleteSelectedCommand}"
                                     ToolTip.Tip="Markierte Einträge löschen (Entf) — mit Bestätigung und Sicherung" />
                             <Button Classes="ghost" Content="Sicherungen" Command="{Binding OpenBackupFolderCommand}"
@@ -234,7 +236,7 @@
                                 <DataGridTextColumn Header="Name" Width="2*" MinWidth="160" x:DataType="vm:RecordRow"
                                                     Binding="{Binding Name}" SortMemberPath="NameSortKey" />
                                 <DataGridTextColumn Header="Typ" Width="96" x:DataType="vm:RecordRow"
-                                                    Binding="{Binding TypeText}" />
+                                                    Binding="{Binding TypeText}" SortMemberPath="TypeText" />
                                 <DataGridTextColumn Header="Daten" Width="1.6*" MinWidth="120" x:DataType="vm:RecordRow"
                                                     Binding="{Binding Data}" SortMemberPath="DataSortKey" />
                                 <DataGridTextColumn Header="Zeitstempel" Width="122" x:DataType="vm:RecordRow"
@@ -242,7 +244,7 @@
                                 <DataGridTextColumn Header="Erreichbarkeit" Width="198" x:DataType="vm:RecordRow"
                                                     Binding="{Binding ReachabilityText}" SortMemberPath="ReachabilitySortKey" />
                                 <DataGridTextColumn Header="Hinweise" Width="2.4*" MinWidth="160" x:DataType="vm:RecordRow"
-                                                    Binding="{Binding FindingsText}" />
+                                                    Binding="{Binding FindingsText}" SortMemberPath="FindingsText" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -305,12 +307,36 @@
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="BEFUNDE" Classes="section-label" />
+                                    <Button Classes="accent" HorizontalAlignment="Left"
+                                            Content="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixLabel}"
+                                            Command="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).CreateMissingPtrCommand}"
+                                            ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixTip}"
+                                            IsVisible="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).HasPtrFixes}" />
                                     <TextBlock Text="Keine Auffälligkeiten." Classes="muted"
                                                IsVisible="{Binding !HasFindings}" />
                                     <ItemsControl ItemsSource="{Binding Findings}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="models:Finding">
-                                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,4" />
+                                                <StackPanel Spacing="4" Margin="0,0,0,12">
+                                                    <Grid ColumnDefinitions="Auto,*">
+                                                        <TextBlock Classes="dot" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                                   Classes.error="{Binding IsError}"
+                                                                   Classes.warn="{Binding IsWarning}"
+                                                                   Classes.info="{Binding IsInfo}" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Help.Title}"
+                                                                   FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    </Grid>
+                                                    <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5" />
+                                                    <TextBlock Text="Bedeutung" Classes="field-label" Margin="0,4,0,0" />
+                                                    <TextBlock Text="{Binding Help.Meaning}" Classes="secondary"
+                                                               FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Auswirkung" Classes="field-label" Margin="0,4,0,0" />
+                                                    <TextBlock Text="{Binding Help.Impact}" Classes="secondary"
+                                                               FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Was tun" Classes="field-label" Margin="0,4,0,0" />
+                                                    <TextBlock Text="{Binding Help.Remedy}" Classes="secondary"
+                                                               FontSize="12" TextWrapping="Wrap" />
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

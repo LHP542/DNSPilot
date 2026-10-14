@@ -1,3 +1,4 @@
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DnsPilot.Models;
@@ -17,6 +18,8 @@ public sealed partial class MainWindowViewModel
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(NewHostCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
+    [NotifyPropertyChangedFor(nameof(PtrFixTip))]
     private bool _allowChanges;
 
     partial void OnAllowChangesChanged(bool value) =>
@@ -119,6 +122,91 @@ public sealed partial class MainWindowViewModel
         if (failed.Count > 0)
         {
             ErrorMessage = $"{failed.Count} Einträge nicht gelöscht:\n" + string.Join("\n", failed.Take(8))
+                + (failed.Count > 8 ? $"\n… und {failed.Count - 8} weitere (siehe Log)." : string.Empty);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Fehlenden PTR anlegen
+    // ------------------------------------------------------------------
+
+    /// <summary>PTR, die sich für die markierten Zeilen eindeutig anlegen lassen.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
+    [NotifyPropertyChangedFor(nameof(HasPtrFixes), nameof(PtrFixLabel), nameof(PtrFixTip))]
+    private IReadOnlyList<PtrFix> _ptrFixes = [];
+
+    public bool HasPtrFixes => PtrFixes.Count > 0;
+
+    public string PtrFixLabel => PtrFixes.Count > 1 ? $"PTR anlegen ({PtrFixes.Count})" : "PTR anlegen";
+
+    public string PtrFixTip
+    {
+        get
+        {
+            if (PtrFixes.Count == 0)
+            {
+                return "Fehlenden PTR für die markierten A-Einträge anlegen. Angeboten nur, wenn kein PTR existiert "
+                    + "und kein anderer Name auf dieselbe Adresse zeigt.";
+            }
+
+            var sb = new StringBuilder("Legt an:");
+            foreach (var fix in PtrFixes.Take(10)) sb.Append('\n').Append(fix);
+            if (PtrFixes.Count > 10) sb.Append("\n… und ").Append(PtrFixes.Count - 10).Append(" weitere");
+            if (!AllowChanges) sb.Append("\n\nErst „Änderungen erlauben“ einschalten.");
+            return sb.ToString();
+        }
+    }
+
+    partial void OnSelectedRowsChanged(IReadOnlyList<RecordRow> value) => RefreshPtrFixes();
+
+    private void RefreshPtrFixes() =>
+        PtrFixes = PtrFixPlanner.Plan(_inventory, SelectedRows.Select(r => r.Record));
+
+    private bool CanCreateMissingPtr() => AllowChanges && !IsBusy && !IsScanning && PtrFixes.Count > 0;
+
+    /// <summary>
+    /// Legt die fehlenden PTR der Auswahl an, nacheinander. Ein Fehler bei einem
+    /// Eintrag hält die übrigen nicht auf.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCreateMissingPtr))]
+    private async Task CreateMissingPtrAsync()
+    {
+        var fixes = PtrFixes.ToList();
+        IsBusy = true;
+        ErrorMessage = null;
+
+        var created = new List<DnsRecord>();
+        var failed = new List<string>();
+        try
+        {
+            foreach (var fix in fixes)
+            {
+                StatusText = $"Lege PTR für {fix.Host.OwnerName} an ({created.Count + failed.Count + 1}/{fixes.Count}) …";
+                try
+                {
+                    created.Add(await _server.CreatePtrAsync(fix.Host, fix.ReverseZone.Name, CancellationToken.None).ConfigureAwait(true));
+                }
+                catch (DnsAccessException ex)
+                {
+                    Log.Warn(ex, "PTR für {0} nicht angelegt.", fix);
+                    failed.Add($"{fix.Host.OwnerName}: {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            if (created.Count > 0) SetInventory(_inventory.With(added: created));
+            IsBusy = false;
+        }
+
+        StatusText = created.Count == 1 && fixes.Count == 1
+            ? $"PTR angelegt: {created[0].Address} → {created[0].Data}."
+            : $"{created.Count} von {fixes.Count} PTR angelegt.";
+
+        if (failed.Count > 0)
+        {
+            ErrorMessage = $"{failed.Count} PTR nicht angelegt:\n" + string.Join("\n", failed.Take(8))
                 + (failed.Count > 8 ? $"\n… und {failed.Count - 8} weitere (siehe Log)." : string.Empty);
         }
     }

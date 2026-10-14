@@ -117,6 +117,15 @@ internal static class ScreenshotTool
         await SettleAsync(main, rounds: 8);
         Save(main, outputDirectory, "auffaelligkeiten.png");
 
+        // --- Befund mit Erklärung und „PTR anlegen" ---------------------------
+        vm.OnlyProblems = false;
+        vm.AllowChanges = true;
+        vm.SearchText = "kamera";
+        vm.ApplyFilter();
+        vm.SelectedRow = vm.VisibleRows.FirstOrDefault(r => r.Name.StartsWith("kamera-hof", StringComparison.Ordinal));
+        await SettleAsync(main, rounds: 8);
+        Save(main, outputDirectory, "ptr-fehlt.png");
+
         // --- Neuer Host --------------------------------------------------------
         var newHost = new NewHostWindowViewModel(server, vm.Inventory, 3600, "10.10.2.33")
         {

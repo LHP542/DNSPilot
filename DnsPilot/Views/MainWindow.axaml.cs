@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.Versioning;
 using System.Text;
 using Avalonia;
@@ -5,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using DnsPilot.Services;
 using DnsPilot.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +56,16 @@ public partial class MainWindow : ChromeWindow, IShellServices
         RecordsGrid.SelectionChanged += (_, _) =>
             viewModel.SelectedRows = RecordsGrid.SelectedItems.OfType<RecordRow>().ToList();
 
+        RecordsGrid.Sorting += (_, e) => _sortColumn = e.Column;
+        viewModel.PropertyChanging += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.VisibleRows)) CaptureGridState();
+        };
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.VisibleRows)) Dispatcher.UIThread.Post(RestoreGridState);
+        };
+
         // Enter im Suchfeld übernimmt den Begriff in den Verlauf.
         SearchBox.KeyDown += (_, e) =>
         {
@@ -74,6 +86,60 @@ public partial class MainWindow : ChromeWindow, IShellServices
             if (_settings is not null) CaptureLayout(_settings.Current);
             viewModel.PersistOnExit();
         };
+    }
+
+    // ------------------------------------------------------------------
+    // Sortierung und Auswahl über einen Listenwechsel retten
+    // ------------------------------------------------------------------
+
+    /// <summary>Zuletzt per Klick sortierte Spalte.</summary>
+    private DataGridColumn? _sortColumn;
+
+    private (DataGridColumn Column, ListSortDirection Direction)? _savedSort;
+    private List<RecordRow> _savedSelection = [];
+
+    /// <summary>
+    /// Jede neue Liste (Filter, Suche, Prüfung bei „Nur Auffälligkeiten",
+    /// Anlegen, Löschen) ersetzt <c>ItemsSource</c>. Das DataGrid baut dann
+    /// eine neue Sicht und vergisst Sortierung und Mehrfachauswahl — nach
+    /// „Auswahl prüfen" sprang die Liste in die Grundreihenfolge zurück.
+    /// Deshalb vor dem Wechsel merken …
+    /// </summary>
+    private void CaptureGridState()
+    {
+        _savedSelection = RecordsGrid.SelectedItems.OfType<RecordRow>().ToList();
+
+        _savedSort = null;
+        if (_sortColumn is null || RecordsGrid.CollectionView is not { } view) return;
+
+        var sort = view.SortDescriptions.FirstOrDefault(d => d.PropertyPath == _sortColumn.SortMemberPath);
+        if (sort is not null) _savedSort = (_sortColumn, sort.Direction);
+    }
+
+    /// <summary>
+    /// … und danach wieder anwenden. Läuft per <c>Post</c>, weil das ViewModel
+    /// nach der neuen Liste noch die Einzelauswahl setzt — und die würde eine
+    /// vorher wiederhergestellte Mehrfachauswahl wieder auf eine Zeile kürzen.
+    /// </summary>
+    private void RestoreGridState()
+    {
+        if (_savedSort is { } sort)
+        {
+            sort.Column.Sort(sort.Direction);
+            _savedSort = null;
+        }
+
+        if (_savedSelection.Count > 1)
+        {
+            var visible = new HashSet<RecordRow>(_viewModel?.VisibleRows ?? []);
+            foreach (var row in _savedSelection)
+            {
+                if (visible.Contains(row) && !RecordsGrid.SelectedItems.Contains(row)) RecordsGrid.SelectedItems.Add(row);
+            }
+        }
+        _savedSelection = [];
+
+        if (RecordsGrid.SelectedItem is { } selected) RecordsGrid.ScrollIntoView(selected, null);
     }
 
     // ------------------------------------------------------------------

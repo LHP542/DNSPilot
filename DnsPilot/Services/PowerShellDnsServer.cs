@@ -138,11 +138,7 @@ public sealed class PowerShellDnsServer(SettingsService settings, IPowerShellRun
 
         if (ptrNode is not null)
         {
-            script += Scripts.CreatePtr
-                .Replace("{RZONE}", PowerShellRunner.Quote(request.ReverseZone!), StringComparison.Ordinal)
-                .Replace("{NODE}", PowerShellRunner.Quote(ptrNode), StringComparison.Ordinal)
-                .Replace("{FQDN}", PowerShellRunner.Quote(request.Fqdn + "."), StringComparison.Ordinal)
-                .Replace("{TTL}", request.Ttl.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+            script += PtrScript(request.ReverseZone!, ptrNode, request.Fqdn, request.Ttl, age: false);
         }
 
         var result = await _runner.RunAsync(Wrap(script, server), null, token).ConfigureAwait(false);
@@ -170,6 +166,35 @@ public sealed class PowerShellDnsServer(SettingsService settings, IPowerShellRun
 
         return created;
     }
+
+    public async Task<DnsRecord> CreatePtrAsync(DnsRecord host, string reverseZone, CancellationToken token)
+    {
+        if (host.Type != RecordType.A || !Ipv4.TryToUInt32(host.Address, out uint ip))
+        {
+            throw new ArgumentException($"{host.OwnerName} ist kein A-Eintrag mit IPv4-Adresse.", nameof(host));
+        }
+
+        string server = Server;
+        string node = DnsRecordMapper.NodeName(ReverseZone.PtrOwnerName(ip), reverseZone);
+        bool age = !host.IsStatic;
+        string script = PtrScript(reverseZone, node, host.OwnerName, host.Ttl, age);
+
+        var result = await _runner.RunAsync(Wrap(script, server), null, token).ConfigureAwait(false);
+        if (result.ExitCode != 0) throw Translate(result, server);
+
+        string owner = DnsRecordMapper.OwnerFqdn(node, reverseZone);
+        Log.Info("PTR-Eintrag ergänzt: {0} → {1} (Zone {2}, TTL {3}, {4}).",
+            owner, host.OwnerName, reverseZone, host.Ttl, age ? "altert mit" : "statisch");
+        return new DnsRecord(reverseZone, owner, RecordType.PTR, host.OwnerName, host.Ttl, age ? DateTime.UtcNow : null);
+    }
+
+    private static string PtrScript(string reverseZone, string node, string targetFqdn, uint ttl, bool age) =>
+        Scripts.CreatePtr
+            .Replace("{RZONE}", PowerShellRunner.Quote(reverseZone), StringComparison.Ordinal)
+            .Replace("{NODE}", PowerShellRunner.Quote(node), StringComparison.Ordinal)
+            .Replace("{FQDN}", PowerShellRunner.Quote(targetFqdn.TrimEnd('.') + "."), StringComparison.Ordinal)
+            .Replace("{TTL}", ttl.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{AGE}", age ? " -AgeRecord" : string.Empty, StringComparison.Ordinal);
 
     public async Task DeleteRecordAsync(DnsRecord record, CancellationToken token)
     {
@@ -310,7 +335,7 @@ public sealed class PowerShellDnsServer(SettingsService settings, IPowerShellRun
             """;
 
         public const string CreatePtr = """
-            Add-DnsServerResourceRecordPtr -ComputerName $s -ZoneName {RZONE} -Name {NODE} -PtrDomainName {FQDN} -TimeToLive ([TimeSpan]::FromSeconds({TTL}))
+            Add-DnsServerResourceRecordPtr -ComputerName $s -ZoneName {RZONE} -Name {NODE} -PtrDomainName {FQDN} -TimeToLive ([TimeSpan]::FromSeconds({TTL})){AGE}
             W 'CREATED PTR'
 
             """;

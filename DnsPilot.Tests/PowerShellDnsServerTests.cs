@@ -236,6 +236,28 @@ public class PowerShellDnsServerTests : IDisposable
         (await act.Should().ThrowAsync<DnsAccessException>()).Which.Message.Should().StartWith("Der A-Eintrag wurde angelegt, der PTR nicht");
     }
 
+    [Theory]
+    [InlineData(false, "")]
+    [InlineData(true, " -AgeRecord")]
+    public async Task PTR_ergaenzen_uebernimmt_TTL_und_altert_bei_dynamischem_Host_mit(bool dynamic, string suffix)
+    {
+        var runner = new FakeRunner();
+        runner.Results.Enqueue(new PowerShellResult(0, ["CREATED PTR"], ""));
+        var server = new PowerShellDnsServer(_settings, runner);
+        var host = new DnsRecord("lhp.intern", "ansible.lhp.intern", RecordType.A, "172.16.1.81", 1200,
+            dynamic ? DateTime.UtcNow.AddDays(-1) : null);
+
+        var ptr = await server.CreatePtrAsync(host, "1.16.172.in-addr.arpa", TestContext.Current.CancellationToken);
+
+        runner.Scripts.Single().Should().Contain(
+            "-ZoneName '1.16.172.in-addr.arpa' -Name '81' -PtrDomainName 'ansible.lhp.intern.' -TimeToLive ([TimeSpan]::FromSeconds(1200))"
+            + suffix);
+        runner.Scripts.Single().Contains("-AgeRecord", StringComparison.Ordinal).Should().Be(dynamic);
+        ptr.OwnerName.Should().Be("81.1.16.172.in-addr.arpa");
+        ptr.Data.Should().Be("ansible.lhp.intern");
+        ptr.IsStatic.Should().Be(!dynamic);
+    }
+
     [Fact]
     public async Task Loeschen_gleicht_den_Inhalt_ab_und_meldet_Verschwundenes()
     {

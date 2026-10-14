@@ -108,6 +108,15 @@ public sealed class DemoDnsServer : IDnsServer
         return Task.FromResult<IReadOnlyList<DnsRecord>>(created);
     }
 
+    public Task<DnsRecord> CreatePtrAsync(DnsRecord host, string reverseZone, CancellationToken token)
+    {
+        Ipv4.TryToUInt32(host.Address, out uint ip);
+        var ptr = new DnsRecord(reverseZone, ReverseZone.PtrOwnerName(ip), RecordType.PTR, host.OwnerName, host.Ttl,
+            host.IsStatic ? null : DateTime.UtcNow);
+        _records.Add(ptr);
+        return Task.FromResult(ptr);
+    }
+
     public Task DeleteRecordAsync(DnsRecord record, CancellationToken token)
     {
         if (_records.RemoveAll(r => r.Key == record.Key) == 0)

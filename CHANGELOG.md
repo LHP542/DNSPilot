@@ -9,6 +9,33 @@ Geschrieben für die Nutzer: was ist neu, was ist behoben — keine Interna.
 Erlaubt sind Überschriften (`###`), Absätze, Aufzählungen, `**fett**`,
 `Code` und Hinweise mit `>`.
 
+## 0.3.0 — 2026-10-14
+
+### Fehlenden PTR per Knopf anlegen
+
+- **PTR anlegen** ergänzt den fehlenden PTR für die markierten A-Einträge —
+  für einen oder viele auf einmal. Die Schaltfläche steht in der Karte
+  *Ändern* und rechts in den Details unter *Befunde*.
+- Angeboten wird sie nur, wo es eindeutig ist: es gibt für die Adresse noch
+  keinen PTR, und kein anderer Name zeigt auf dieselbe Adresse.
+- Der PTR bekommt die TTL des A-Eintrags. Ist der A-Eintrag dynamisch, altert
+  der PTR mit und wird mit ihm zusammen aufgeräumt.
+
+### Befunde mit Erklärung
+
+- Rechts in den Details steht zu jedem Befund, **was er bedeutet**, **welche
+  Auswirkung** er hat und **was zu tun ist** — etwa was ein PTR ist, warum
+  ein fehlender PTR in Logs und Werkzeugen stört und warum ein Widerspruch
+  zwischen PTR und A mit einem statischen Eintrag nicht von selbst
+  verschwindet.
+
+### Behoben
+
+- Nach **Auswahl prüfen** sprang die Tabelle in die Grundreihenfolge zurück,
+  wenn *Nur Auffälligkeiten* an war, und die Markierung schrumpfte auf eine
+  Zeile. Sortierung und Markierung bleiben jetzt erhalten — auch beim Filtern,
+  Suchen, Anlegen und Löschen.
+
 ## 0.2.0 — 2026-10-13
 
 ### Updates mit Versionshinweisen
