@@ -23,6 +23,7 @@ public sealed partial class MainWindowViewModel
     [NotifyCanExecuteChangedFor(nameof(CancelScanCommand))]
     [NotifyCanExecuteChangedFor(nameof(ReloadCommand))]
     [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RetargetCnameCommand))]
     private bool _isScanning;
 
     [ObservableProperty]

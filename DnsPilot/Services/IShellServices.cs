@@ -27,6 +27,9 @@ public interface IShellServices
     /// <summary>Zeigt den Dialog „Neuer Host" modal.</summary>
     Task ShowNewHostDialogAsync(NewHostWindowViewModel viewModel);
 
+    /// <summary>Zeigt den Dialog „Alias umbiegen" modal.</summary>
+    Task ShowRetargetCnameDialogAsync(RetargetCnameWindowViewModel viewModel);
+
     /// <summary>Zeigt die Löschbestätigung modal.</summary>
     Task ShowDeleteDialogAsync(DeleteWindowViewModel viewModel);
 

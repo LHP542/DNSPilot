@@ -27,6 +27,13 @@ public interface IDnsServer
     Task<DnsRecord> CreatePtrAsync(DnsRecord host, string reverseZone, CancellationToken token);
 
     /// <summary>
+    /// Biegt einen CNAME auf ein neues Ziel um; Name und TTL bleiben. Wirft
+    /// <see cref="DnsAccessException"/>, wenn der Alias auf dem Server nicht
+    /// mehr mit dem bisherigen Ziel existiert. Liefert den geänderten Eintrag.
+    /// </summary>
+    Task<DnsRecord> RetargetCnameAsync(DnsRecord alias, string newTargetFqdn, CancellationToken token);
+
+    /// <summary>
     /// Löscht genau diesen Eintrag. Wirft <see cref="DnsAccessException"/>, wenn
     /// er auf dem Server nicht mehr existiert.
     /// </summary>

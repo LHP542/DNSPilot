@@ -19,6 +19,7 @@ public sealed partial class MainWindowViewModel
     [NotifyCanExecuteChangedFor(nameof(NewHostCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
     [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RetargetCnameCommand))]
     [NotifyPropertyChangedFor(nameof(PtrFixTip))]
     private bool _allowChanges;
 
@@ -209,6 +210,37 @@ public sealed partial class MainWindowViewModel
             ErrorMessage = $"{failed.Count} PTR nicht angelegt:\n" + string.Join("\n", failed.Take(8))
                 + (failed.Count > 8 ? $"\n… und {failed.Count - 8} weitere (siehe Log)." : string.Empty);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Alias umbiegen
+    // ------------------------------------------------------------------
+
+    /// <summary>Genau ein CNAME markiert — dann gibt es „Alias umbiegen".</summary>
+    public bool SelectionIsCname => SelectedRows is [{ Record.Type: RecordType.CNAME }];
+
+    private bool CanRetargetCname() => AllowChanges && !IsBusy && !IsScanning && SelectionIsCname;
+
+    [RelayCommand(CanExecute = nameof(CanRetargetCname))]
+    private async Task RetargetCnameAsync()
+    {
+        if (_shell is null) return;
+
+        var alias = SelectedRows[0].Record;
+        string server = _serverInfo?.ServerName ?? "?";
+        var vm = new RetargetCnameWindowViewModel(_server, _inventory, alias,
+            record => _backup.Write(record, server, DateTime.UtcNow));
+        await _shell.ShowRetargetCnameDialogAsync(vm).ConfigureAwait(true);
+
+        if (vm.Updated is { } updated) ApplyRetarget(alias, updated);
+    }
+
+    /// <summary>Übernimmt einen umgebogenen Alias ins Inventar und wählt ihn wieder aus.</summary>
+    internal void ApplyRetarget(DnsRecord old, DnsRecord updated)
+    {
+        SetInventory(_inventory.With(added: [updated], removed: [old]));
+        SelectedRow = VisibleRows.FirstOrDefault(r => r.Record.Key == updated.Key);
+        StatusText = $"{old.OwnerName} zeigt jetzt auf {updated.Data} (vorher {old.Data}).";
     }
 
     /// <summary>Öffnet den Ordner mit den Löschsicherungen.</summary>

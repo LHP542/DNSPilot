@@ -156,8 +156,7 @@
                                       IsChecked="{Binding AllowChanges, Mode=TwoWay}" />
                             <Button Classes="accent" Content="＋ Neuer Host" Command="{Binding NewHostCommand}" />
                             <Button Content="{Binding PtrFixLabel}" Command="{Binding CreateMissingPtrCommand}"
-                                    ToolTip.Tip="{Binding PtrFixTip}" />
-                            <Button Classes="danger" Content="Löschen …" Command="{Binding DeleteSelectedCommand}"
+                                    ToolTip.Tip="{Binding PtrFixTip}" />                            <Button Classes="danger" Content="Löschen …" Command="{Binding DeleteSelectedCommand}"
                                     ToolTip.Tip="Markierte Einträge löschen (Entf) — mit Bestätigung und Sicherung" />
                             <Button Classes="ghost" Content="Sicherungen" Command="{Binding OpenBackupFolderCommand}"
                                     ToolTip.Tip="Ordner mit den Sicherungen gelöschter Einträge öffnen" />
@@ -307,11 +306,17 @@
 
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="BEFUNDE" Classes="section-label" />
-                                    <Button Classes="accent" HorizontalAlignment="Left"
-                                            Content="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixLabel}"
-                                            Command="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).CreateMissingPtrCommand}"
-                                            ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixTip}"
-                                            IsVisible="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).HasPtrFixes}" />
+                                    <WrapPanel ItemSpacing="8" LineSpacing="8">
+                                        <Button Classes="accent"
+                                                Content="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixLabel}"
+                                                Command="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).CreateMissingPtrCommand}"
+                                                ToolTip.Tip="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).PtrFixTip}"
+                                                IsVisible="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).HasPtrFixes}" />
+                                        <Button Classes="accent" Content="Alias umbiegen …"
+                                                Command="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).RetargetCnameCommand}"
+                                                ToolTip.Tip="Neues Ziel für diesen CNAME — im Schreibmodus"
+                                                IsVisible="{Binding $parent[views:MainWindow].((vm:MainWindowViewModel)DataContext).SelectionIsCname}" />
+                                    </WrapPanel>
                                     <TextBlock Text="Keine Auffälligkeiten." Classes="muted"
                                                IsVisible="{Binding !HasFindings}" />
                                     <ItemsControl ItemsSource="{Binding Findings}">

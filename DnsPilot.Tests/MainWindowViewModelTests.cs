@@ -170,6 +170,29 @@ public class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Alias_umbiegen_nur_bei_genau_einem_CNAME_und_danach_ohne_Befund()
+    {
+        await _vm.ReloadCommand.ExecuteAsync(null);
+        var wiki = _vm.VisibleRows.Single(r => r.Name.StartsWith("wiki.", StringComparison.Ordinal));
+        wiki.Findings.Should().Contain(f => f.Kind == FindingKind.CnameDangling);
+
+        _vm.AllowChanges = true;
+        _vm.SelectedRows = [wiki, _vm.VisibleRows[0]];
+        _vm.RetargetCnameCommand.CanExecute(null).Should().BeFalse("zwei Zeilen markiert");
+        _vm.SelectedRows = [wiki];
+        _vm.SelectionIsCname.Should().BeTrue();
+        _vm.RetargetCnameCommand.CanExecute(null).Should().BeTrue();
+
+        _vm.ApplyRetarget(wiki.Record, wiki.Record with { Data = "fileserver.musterstadt.beispiel" });
+
+        var row = _vm.VisibleRows.Single(r => r.Name.StartsWith("wiki.", StringComparison.Ordinal));
+        row.Data.Should().Be("fileserver.musterstadt.beispiel");
+        row.Findings.Should().NotContain(f => f.Kind == FindingKind.CnameDangling);
+        _vm.SelectedRow.Should().Be(row);
+        _vm.StatusText.Should().Contain("vorher wikiserver");
+    }
+
+    [Fact]
     public async Task Ein_bereits_verschwundener_Eintrag_wird_gemeldet_statt_still_uebergangen()
     {
         await _vm.ReloadCommand.ExecuteAsync(null);

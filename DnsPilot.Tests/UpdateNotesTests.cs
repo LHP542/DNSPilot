@@ -270,5 +270,6 @@ public class UpdateFlowTests : IDisposable
         public Task OpenExternalAsync(string target) => Task.CompletedTask;
         public Task ShowNewHostDialogAsync(NewHostWindowViewModel viewModel) => Task.CompletedTask;
         public Task ShowDeleteDialogAsync(DeleteWindowViewModel viewModel) => Task.CompletedTask;
+        public Task ShowRetargetCnameDialogAsync(RetargetCnameWindowViewModel viewModel) => Task.CompletedTask;
     }
 }

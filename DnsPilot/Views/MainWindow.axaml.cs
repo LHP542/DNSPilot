@@ -289,6 +289,9 @@ public partial class MainWindow : ChromeWindow, IShellServices
     public Task ShowNewHostDialogAsync(NewHostWindowViewModel viewModel) =>
         new NewHostWindow(viewModel).ShowDialog(this);
 
+    public Task ShowRetargetCnameDialogAsync(RetargetCnameWindowViewModel viewModel) =>
+        new RetargetCnameWindow(viewModel).ShowDialog(this);
+
     public Task ShowDeleteDialogAsync(DeleteWindowViewModel viewModel) =>
         new DeleteWindow(viewModel).ShowDialog(this);
 

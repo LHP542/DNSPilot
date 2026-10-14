@@ -196,6 +196,30 @@ public sealed class PowerShellDnsServer(SettingsService settings, IPowerShellRun
             .Replace("{TTL}", ttl.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
             .Replace("{AGE}", age ? " -AgeRecord" : string.Empty, StringComparison.Ordinal);
 
+    public async Task<DnsRecord> RetargetCnameAsync(DnsRecord alias, string newTargetFqdn, CancellationToken token)
+    {
+        if (alias.Type != RecordType.CNAME) throw new ArgumentException($"{alias.OwnerName} ist kein CNAME.", nameof(alias));
+
+        string server = Server;
+        string target = newTargetFqdn.TrimEnd('.');
+        string script = Scripts.RetargetCname
+            .Replace("{ZONE}", PowerShellRunner.Quote(alias.Zone), StringComparison.Ordinal)
+            .Replace("{NAME}", PowerShellRunner.Quote(DnsRecordMapper.NodeName(alias.OwnerName, alias.Zone)), StringComparison.Ordinal)
+            .Replace("{DATA}", PowerShellRunner.Quote(alias.Data), StringComparison.Ordinal)
+            .Replace("{TARGET}", PowerShellRunner.Quote(target + "."), StringComparison.Ordinal);
+
+        var result = await _runner.RunAsync(Wrap(script, server), null, token).ConfigureAwait(false);
+
+        if (result.ExitCode == ExitNotFound)
+        {
+            throw new DnsAccessException($"{alias.OwnerName} (CNAME → {alias.Data}) existiert so auf dem Server nicht mehr.");
+        }
+        if (result.ExitCode != 0) throw Translate(result, server);
+
+        Log.Info("CNAME umgebogen: {0} → {1} (vorher {2}, Zone {3}).", alias.OwnerName, target, alias.Data, alias.Zone);
+        return alias with { Data = target };
+    }
+
     public async Task DeleteRecordAsync(DnsRecord record, CancellationToken token)
     {
         string server = Server;
@@ -338,6 +362,27 @@ public sealed class PowerShellDnsServer(SettingsService settings, IPowerShellRun
             Add-DnsServerResourceRecordPtr -ComputerName $s -ZoneName {RZONE} -Name {NODE} -PtrDomainName {FQDN} -TimeToLive ([TimeSpan]::FromSeconds({TTL})){AGE}
             W 'CREATED PTR'
 
+            """;
+
+        /// <summary>
+        /// Ziel eines CNAME ändern. Muster aus der Doku von
+        /// Set-DnsServerResourceRecord: Kopie per [ciminstance]::new, Kopie
+        /// ändern, alt gegen neu tauschen. Der Alias verschwindet dabei nie —
+        /// anders als bei Löschen und neu Anlegen.
+        /// </summary>
+        public const string RetargetCname = """
+            $all = @()
+            try {
+              $all = @(Get-DnsServerResourceRecord -ComputerName $s -ZoneName {ZONE} -Name {NAME} -RRType 'CNAME')
+            } catch {
+              if ($_.CategoryInfo.Category -ne 'ObjectNotFound') { throw }
+            }
+            $old = @($all | Where-Object { $_.RecordData.HostNameAlias.TrimEnd('.') -eq {DATA} })
+            if ($old.Count -eq 0) { [Console]::Error.WriteLine('nicht gefunden'); exit 3 }
+            $new = [ciminstance]::new($old[0])
+            $new.RecordData.HostNameAlias = {TARGET}
+            Set-DnsServerResourceRecord -ComputerName $s -ZoneName {ZONE} -OldInputObject $old[0] -NewInputObject $new
+            W 'UPDATED CNAME'
             """;
 
         public const string Delete = """

@@ -259,6 +259,36 @@ public class PowerShellDnsServerTests : IDisposable
     }
 
     [Fact]
+    public async Task Umbiegen_sucht_den_Alias_mit_altem_Ziel_und_tauscht_per_Set()
+    {
+        var runner = new FakeRunner();
+        runner.Results.Enqueue(new PowerShellResult(0, ["UPDATED CNAME"], ""));
+        var server = new PowerShellDnsServer(_settings, runner);
+        var alias = new DnsRecord("lhp.intern", "wiki.lhp.intern", RecordType.CNAME, "wikiserver.lhp.intern", 3600, null);
+
+        var updated = await server.RetargetCnameAsync(alias, "fileserver.lhp.intern", TestContext.Current.CancellationToken);
+
+        runner.Scripts.Single().Should()
+            .Contain("-ZoneName 'lhp.intern' -Name 'wiki' -RRType 'CNAME'")
+            .And.Contain("TrimEnd('.') -eq 'wikiserver.lhp.intern'")
+            .And.Contain("HostNameAlias = 'fileserver.lhp.intern.'")
+            .And.Contain("Set-DnsServerResourceRecord -ComputerName $s -ZoneName 'lhp.intern' -OldInputObject");
+        updated.Should().Be(alias with { Data = "fileserver.lhp.intern" });
+    }
+
+    [Fact]
+    public async Task Umbiegen_eines_verschwundenen_Alias_wird_gemeldet()
+    {
+        var runner = new FakeRunner();
+        runner.Results.Enqueue(new PowerShellResult(3, [], "nicht gefunden"));
+        var alias = new DnsRecord("lhp.intern", "wiki.lhp.intern", RecordType.CNAME, "wikiserver.lhp.intern", 3600, null);
+
+        var act = () => new PowerShellDnsServer(_settings, runner).RetargetCnameAsync(alias, "x.lhp.intern", TestContext.Current.CancellationToken);
+
+        (await act.Should().ThrowAsync<DnsAccessException>()).Which.Message.Should().Contain("existiert so auf dem Server nicht mehr");
+    }
+
+    [Fact]
     public async Task Loeschen_gleicht_den_Inhalt_ab_und_meldet_Verschwundenes()
     {
         var runner = new FakeRunner();
@@ -302,7 +332,7 @@ public class PowerShellDnsServerTests : IDisposable
         string[] all =
         [
             PowerShellDnsServer.Scripts.Frame, PowerShellDnsServer.Scripts.Connect, PowerShellDnsServer.Scripts.Load,
-            PowerShellDnsServer.Scripts.CreateA, PowerShellDnsServer.Scripts.CreatePtr, PowerShellDnsServer.Scripts.Delete,
+            PowerShellDnsServer.Scripts.CreateA, PowerShellDnsServer.Scripts.CreatePtr, PowerShellDnsServer.Scripts.RetargetCname, PowerShellDnsServer.Scripts.Delete,
             .. Enum.GetValues<RecordType>().Select(PowerShellDnsServer.Scripts.DataExpression),
         ];
 

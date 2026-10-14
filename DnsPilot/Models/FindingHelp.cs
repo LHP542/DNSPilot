@@ -96,8 +96,9 @@ public sealed record FindingHelp(string Title, string Meaning, string Impact, st
             + "in den eigenen Zonen nicht.",
             "Wer den Alias benutzt, erhält „Name nicht gefunden“. Meist ist der Zielhost abgebaut oder "
             + "umbenannt worden, der Alias blieb übrig.",
-            "Alias löschen, wenn er nicht mehr gebraucht wird, sonst auf den neuen Host umbiegen. Vorher klären, "
-            + "ob noch Verknüpfungen, Skripte oder Konfigurationen den Alias verwenden."),
+            "Wird der Alias noch gebraucht, mit „Alias umbiegen …“ (Schreibmodus) auf den neuen Host zeigen lassen — "
+            + "Name und TTL bleiben, Verknüpfungen funktionieren danach wieder. Sonst löschen; vorher klären, ob "
+            + "noch Verknüpfungen, Skripte oder Konfigurationen den Alias verwenden."),
 
         FindingKind.DuplicateIp => new(
             "Doppelte Adresse",

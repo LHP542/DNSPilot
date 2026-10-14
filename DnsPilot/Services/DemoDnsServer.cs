@@ -117,6 +117,17 @@ public sealed class DemoDnsServer : IDnsServer
         return Task.FromResult(ptr);
     }
 
+    public Task<DnsRecord> RetargetCnameAsync(DnsRecord alias, string newTargetFqdn, CancellationToken token)
+    {
+        if (_records.RemoveAll(r => r.Key == alias.Key) == 0)
+        {
+            throw new DnsAccessException($"{alias.OwnerName} existiert nicht mehr.");
+        }
+        var updated = alias with { Data = newTargetFqdn.TrimEnd('.') };
+        _records.Add(updated);
+        return Task.FromResult(updated);
+    }
+
     public Task DeleteRecordAsync(DnsRecord record, CancellationToken token)
     {
         if (_records.RemoveAll(r => r.Key == record.Key) == 0)

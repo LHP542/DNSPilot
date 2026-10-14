@@ -1,0 +1,93 @@
+<views:ChromeWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:DnsPilot.Views"
+        xmlns:controls="using:DnsPilot.Controls"
+        xmlns:vm="using:DnsPilot.ViewModels"
+        x:Class="DnsPilot.Views.RetargetCnameWindow"
+        x:DataType="vm:RetargetCnameWindowViewModel"
+        Title="Alias umbiegen"
+        Width="600" SizeToContent="Height"
+        MinWidth="480"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource KrosteBackgroundBrush}">
+
+    <DockPanel>
+        <controls:TitleBar DockPanel.Dock="Top" Title="Alias umbiegen" />
+
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource KrosteTitleBarBrush}"
+                BorderBrush="{DynamicResource KrosteBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button Content="Abbrechen" Command="{Binding CancelCommand}" />
+                <Button Content="Umbiegen" Classes="accent" Command="{Binding RetargetCommand}" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel Margin="16,14" Spacing="12">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Alias umbiegen" Classes="h1" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="Ändert, wohin der CNAME zeigt. Name und TTL bleiben; der bisherige Eintrag wird vorher gesichert." />
+            </StackPanel>
+
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Text="Alias" Classes="field-label" />
+                        <SelectableTextBlock Grid.Column="1" Classes="field-value mono" Text="{Binding AliasName}" />
+
+                        <TextBlock Grid.Row="1" Text="Bisheriges Ziel" Classes="field-label" />
+                        <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="field-value mono"
+                                             Text="{Binding CurrentTargetText}" TextWrapping="Wrap" />
+                    </Grid>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Neues Ziel" Classes="secondary" FontSize="12" />
+                        <AutoCompleteBox x:Name="TargetBox"
+                                         Text="{Binding Target, Mode=TwoWay}"
+                                         ItemsSource="{Binding Suggestions}"
+                                         FilterMode="Contains"
+                                         MinimumPrefixLength="2"
+                                         MaxDropDownHeight="260"
+                                         PlaceholderText="Hostname oder vollständiger Name, z. B. fileserver" />
+                        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                   Text="Ohne Punkt wird die Zone des Alias angehängt." />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding Preview}" Classes="mono" HorizontalAlignment="Center"
+                       Foreground="{DynamicResource KrosteGoldBrush}"
+                       IsVisible="{Binding Preview, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <TextBlock Text="{Binding InfoText}" Classes="secondary" FontSize="12" TextWrapping="Wrap"
+                       IsVisible="{Binding InfoText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <Border Classes="card" IsVisible="{Binding HasErrors}"
+                    Background="{DynamicResource KrosteDangerSoftBrush}"
+                    BorderBrush="{DynamicResource KrosteDangerBrush}">
+                <TextBlock Text="{Binding ErrorsText}" TextWrapping="Wrap" />
+            </Border>
+
+            <Border Classes="card" IsVisible="{Binding HasWarnings}"
+                    Background="{DynamicResource KrosteWarningSoftBrush}"
+                    BorderBrush="{DynamicResource KrosteWarningBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding WarningsText}" TextWrapping="Wrap" />
+                    <CheckBox Content="Trotzdem umbiegen" IsChecked="{Binding AcceptWarnings, Mode=TwoWay}" />
+                </StackPanel>
+            </Border>
+
+            <Border Classes="card"
+                    IsVisible="{Binding ResultMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="{DynamicResource KrosteDangerSoftBrush}"
+                    BorderBrush="{DynamicResource KrosteDangerBrush}">
+                <SelectableTextBlock Text="{Binding ResultMessage}" TextWrapping="Wrap" />
+            </Border>
+
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+    </DockPanel>
+</views:ChromeWindow>

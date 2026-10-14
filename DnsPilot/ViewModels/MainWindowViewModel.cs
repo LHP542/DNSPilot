@@ -86,6 +86,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(NewHostCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
     [NotifyCanExecuteChangedFor(nameof(CreateMissingPtrCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RetargetCnameCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -441,6 +442,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ScanSelectedCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RetargetCnameCommand))]
+    [NotifyPropertyChangedFor(nameof(SelectionIsCname))]
     private IReadOnlyList<RecordRow> _selectedRows = [];
 
     public ObservableCollection<RecordRow> RelatedRows { get; } = [];

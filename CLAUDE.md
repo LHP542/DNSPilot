@@ -62,9 +62,9 @@ Analyzer an. Ausgeliefert werden nur `DnsPilot.exe` und `nlog.config`
 
 ## Aktueller Stand
 
-**v0.2.0 veröffentlicht, 2026-10-13; 0.3.0 vorbereitet (CHANGELOG), nicht getaggt** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
+**v0.3.0 veröffentlicht und im Update-Ordner, 2026-10-14; 0.4.0 vorbereitet (CHANGELOG), nicht getaggt** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
 CI und Release-Workflow grün; das ZIP von v0.1.0 enthält noch die PDBs, ab
-v0.1.1 nicht mehr) — 312 Tests grün (Stand 0.3.0), Oberfläche per Bildschirmfoto-Modus mit
+v0.1.1 nicht mehr) — 326 Tests grün (Stand 0.4.0), Oberfläche per Bildschirmfoto-Modus mit
 Demodaten geprüft. Der DNS-Zugriff ist von WMI auf PowerShell umgestellt
 (siehe „Warum PowerShell").
 
@@ -103,6 +103,16 @@ Was gebaut ist:
   übernimmt die TTL des A und setzt bei dynamischem A `-AgeRecord`, damit der
   PTR nicht als statischer Überrest zurückbleibt. Gegen die echten DCs noch
   nicht gelaufen.
+- **Alias umbiegen** (seit 0.4.0, Schreibmodus): Knopf in der Detailansicht,
+  wenn genau ein CNAME markiert ist (bewusst nicht in der ÄNDERN-Karte — dort
+  bräche die Kartenreihe bei 1440 px um). `RetargetCnameWindow` prüft live per
+  `CnameTargetValidator` (Kurzname bekommt die Zone des Alias, nicht
+  vorhandenes Ziel bestätigen, Alias als Ziel warnt, Schleife blockiert).
+  Vorher Sicherung über `DeletionBackup`. `IDnsServer.RetargetCnameAsync`:
+  alten Eintrag mit altem Ziel holen, `[ciminstance]::new` kopieren, Ziel
+  ändern, `Set-DnsServerResourceRecord -OldInputObject -NewInputObject`
+  (Muster aus der Microsoft-Doku) — der Alias ist nie weg. Gegen die echten
+  DCs noch nicht gelaufen.
 - **Widerspruch PTR/A** ist nur eine Info, wenn alle Beteiligten dynamisch
   sind (Notebook hat das Netz gewechselt), sonst eine Warnung.
 - **Scavenging in der Domäne** (geprüft 2026-10-13): läuft auf einem der DCs
@@ -145,7 +155,7 @@ Kandidaten, die beim Bauen aufgefallen sind — nichts davon ist zugesagt:
 - **Erster Lauf gegen DC01** (187 Zonen) und dabei messen: Ladezeit gesamt
   steht im Log. Falls das spürbar dauert, die Zonen auf zwei, drei
   PowerShell-Läufe verteilen.
-- **Anlegen und Löschen** über die Cmdlets sind nur gegen eine Attrappe
+- **Anlegen, Löschen, PTR anlegen und Alias umbiegen** über die Cmdlets sind nur gegen eine Attrappe
   getestet — der erste echte Lauf am besten mit einem Testeintrag.
 - **Wiederherstellen aus der Löschsicherung** — `DeletionBackup.Read` gibt es
   schon, es fehlt nur der Dialog.
@@ -171,14 +181,15 @@ DnsPilot/
                 DnsRecordMapper, DnsInventory,
                 DnsAnalyzer, SearchQuery, IpRange (+ Ipv4), ReverseZone,
                 ScanService, HostProbe (IHostProbe), SightingStore, PtrFixPlanner,
-                SightingEvaluator, NewHostValidator, DeletionBackup,
+                SightingEvaluator, NewHostValidator, CnameTargetValidator, DeletionBackup,
                 RecordCsv, CredentialStore, DemoDnsServer (+ DemoHostProbe),
                 SettingsService, JsonFileStore, SecretProtection,
                 UpdateService, UpdateChannel, Changelog, ReleaseNotesFormatter
   ViewModels/   MainWindowViewModel (+ .Checks.cs, .Changes.cs, .Updates.cs),
-                RecordRow, NewHostWindowViewModel, DeleteWindowViewModel,
+                RecordRow, NewHostWindowViewModel, RetargetCnameWindowViewModel,
+                DeleteWindowViewModel,
                 SettingsWindowViewModel
-  Views/        ChromeWindow, MainWindow, NewHostWindow, DeleteWindow,
+  Views/        ChromeWindow, MainWindow, NewHostWindow, RetargetCnameWindow, DeleteWindow,
                 SettingsWindow, AboutWindow, UpdateDialog, WhatsNewWindow,
                 ReleaseNotesRenderer, LayoutRules, TrayController,
                 SingleInstanceGuard, GlobalExceptionHandler, ScreenshotTool

@@ -39,6 +39,8 @@ eine Adresse verweist. Genau das zeigt DNS-Pilot.
   vergebener Adresse.
 - **Fehlenden PTR per Knopf anlegen** — für einen oder viele markierte
   A-Einträge auf einmal, aber nur, wo eindeutig ist, welcher Name hineingehört.
+- **Alias umbiegen** — einen CNAME auf ein neues Ziel zeigen lassen, mit
+  Prüfung des Ziels beim Tippen und Sicherung des alten Eintrags.
 - **Einträge löschen** — mit Bestätigungsliste, passendem PTR als Vorschlag
   und einer Sicherung jedes gelöschten Eintrags.
 
@@ -179,6 +181,17 @@ A-Eintrags; ist der A-Eintrag dynamisch, altert der PTR mit und wird mit ihm
 zusammen aufgeräumt. Der Tooltip der Schaltfläche listet, was angelegt wird.
 
 ![PTR fehlt](docs/ptr-fehlt.png)
+
+**Alias umbiegen …** steht rechts in den Details, sobald genau ein CNAME
+markiert ist — etwa bei *CNAME ins Leere*, wenn der Zielhost umbenannt oder
+ersetzt wurde. Name und TTL des Alias bleiben, nur das Ziel ändert sich; der
+Alias verschwindet dabei nicht kurz. Das neue Ziel wird beim Tippen geprüft
+(Namensvorschläge aus den eigenen Zonen, ohne Punkt gilt die Zone des Alias):
+gibt es den Namen nicht, muss das bestätigt werden; zeigt das Ziel selbst auf
+einen Alias, gibt es einen Hinweis; eine Schleife wird abgelehnt. Der
+bisherige Eintrag landet vorher in derselben Sicherung wie beim Löschen.
+
+![Alias umbiegen](docs/alias-umbiegen.png)
 
 **Löschen …** (oder Entf in der Tabelle) zeigt die markierten Einträge noch
 einmal einzeln. Zu einem A-Eintrag wird der PTR, der auf ihn zeigt, mit

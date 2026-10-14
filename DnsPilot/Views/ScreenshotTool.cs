@@ -135,6 +135,13 @@ internal static class ScreenshotTool
         await ShowAndSettleAsync(newHostWindow);
         Save(newHostWindow, outputDirectory, "neuer-host.png");
 
+        // --- Alias umbiegen -----------------------------------------------------
+        var wiki = vm.Inventory.Records.First(r => r.OwnerName.StartsWith("wiki.", StringComparison.Ordinal));
+        var retarget = new RetargetCnameWindowViewModel(server, vm.Inventory, wiki, _ => string.Empty) { Target = "fileserver" };
+        var retargetWindow = new RetargetCnameWindow(retarget);
+        await ShowAndSettleAsync(retargetWindow);
+        Save(retargetWindow, outputDirectory, "alias-umbiegen.png");
+
         // --- Löschen -------------------------------------------------------------
         var toDelete = vm.Inventory.Records.Where(r => r.OwnerName.StartsWith("altes-nas", StringComparison.Ordinal)
             || r.Data.StartsWith("scanner-keller", StringComparison.Ordinal)).ToList();
@@ -160,7 +167,7 @@ internal static class ScreenshotTool
         await ShowAndSettleAsync(whatsNew);
         Save(whatsNew, outputDirectory, "was-ist-neu.png");
 
-        foreach (var w in new Window[] { main, newHostWindow, deleteWindow, settingsWindow, updateDialog, whatsNew }) w.Close();
+        foreach (var w in new Window[] { main, newHostWindow, retargetWindow, deleteWindow, settingsWindow, updateDialog, whatsNew }) w.Close();
 
         Log.Info("Bildschirmfotos in {0} erzeugt.", outputDirectory);
         if (app.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes

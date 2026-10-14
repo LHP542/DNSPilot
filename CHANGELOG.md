@@ -9,6 +9,21 @@ Geschrieben für die Nutzer: was ist neu, was ist behoben — keine Interna.
 Erlaubt sind Überschriften (`###`), Absätze, Aufzählungen, `**fett**`,
 `Code` und Hinweise mit `>`.
 
+## 0.4.0 — 2026-10-14
+
+### Alias umbiegen
+
+- Ein CNAME lässt sich jetzt auf ein neues Ziel umbiegen: **Alias umbiegen …**
+  rechts in den Details, sobald genau ein CNAME markiert ist (Schreibmodus).
+  Typischer Fall: *CNAME ins Leere*, weil der Zielhost umbenannt oder ersetzt
+  wurde.
+- Name und TTL bleiben, nur das Ziel ändert sich — der Alias ist dabei nie
+  kurz weg.
+- Das neue Ziel wird beim Tippen geprüft, mit Namensvorschlägen aus den
+  eigenen Zonen. Gibt es den Namen nicht, muss das bestätigt werden; ein Ziel,
+  das über Aliase zurückführt, wird abgelehnt.
+- Der bisherige Eintrag wird vorher gesichert, wie beim Löschen.
+
 ## 0.3.0 — 2026-10-14
 
 ### Fehlenden PTR per Knopf anlegen
