@@ -192,8 +192,12 @@ DnsPilot/
    (zugleich Release-Text).
 3. `scripts\publish-share.ps1 -Version X.Y.Z [-Source <Ordner>]` → prüft gegen
    die SHA-256 des Releases, kopiert erst Notes, dann das ZIP über `.tmp`.
-   Auf dem Arbeitslaptop blockt der Proxy ZIPs von GitHub — über den
-   Citrix-Browser laden und `-Source` angeben.
+   **Auf dem Arbeitslaptop blockt der Proxy ZIPs von GitHub** — dort das
+   Paket selbst bauen (Skill `allgemein`, „Arbeitsprogramme"): vom Tag mit
+   der Publish-Zeile oben nach `publish/win-x64`, ZIP aus `DnsPilot.exe` +
+   `nlog.config` per `tar.exe`, Notes per `scripts/extract-notes.sh`, dann
+   von Hand Notes zuerst und das ZIP über `.tmp` auf den Share. Das Skript
+   lehnt ein lokal gebautes ZIP ab (Prüfsumme). So ausgerollt: 0.3.0.
 4. `.gitattributes` hält `*.sh` auf LF — der Release-Job läuft auf Windows,
    ein CRLF-Skript bräche an `set -o pipefail\r`.
 
