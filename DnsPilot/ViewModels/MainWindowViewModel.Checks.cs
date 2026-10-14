@@ -115,8 +115,12 @@ public sealed partial class MainWindowViewModel
             _scanCts.Dispose();
             _scanCts = null;
 
-            // Kandidaten und Auflösungsprobleme sind erst jetzt bekannt.
-            if (OnlyProblems) ApplyFilter();
+            // Bewusst KEIN ApplyFilter: Geprüft werden nur sichtbare Zeilen,
+            // neu filtern könnte also nur Zeilen entfernen — etwa die gerade
+            // geprüfte, wenn sie jetzt unauffällig ist. Dafür bekam die Tabelle
+            // eine neue Liste und sprang in der Ansicht (bei „Nur
+            // Auffälligkeiten", je nach Scrollstand an eine andere Stelle).
+            // Die Liste bleibt stehen, bis der Nutzer den Filter ändert.
             RefreshSummaryCounts();
         }
     }

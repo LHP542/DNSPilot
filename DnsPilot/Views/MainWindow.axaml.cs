@@ -113,18 +113,29 @@ public partial class MainWindow : ChromeWindow, IShellServices
     private DataGridColumn? _sortColumn;
 
     private (DataGridColumn Column, ListSortDirection Direction)? _savedSort;
-    private List<RecordRow> _savedSelection = [];
 
     /// <summary>
-    /// Jede neue Liste (Filter, Suche, Prüfung bei „Nur Auffälligkeiten",
-    /// Anlegen, Löschen) ersetzt <c>ItemsSource</c>. Das DataGrid baut dann
-    /// eine neue Sicht und vergisst Sortierung und Mehrfachauswahl — nach
-    /// „Auswahl prüfen" sprang die Liste in die Grundreihenfolge zurück.
-    /// Deshalb vor dem Wechsel merken …
+    /// Markierung, gemerkt über <see cref="Models.DnsRecord.Key"/>: nach Anlegen
+    /// oder Löschen baut das ViewModel neue Zeilenobjekte, ein Vergleich der
+    /// Objekte fände sie nicht.
+    /// </summary>
+    private List<string> _savedSelection = [];
+
+    /// <summary>
+    /// Jede neue Liste (Filter, Suche, Anlegen, Löschen) ersetzt
+    /// <c>ItemsSource</c>. Das DataGrid baut dann eine neue Sicht: Sortierung
+    /// und Mehrfachauswahl sind weg, und die Ansicht steht wieder oben. Deshalb
+    /// vor dem Wechsel merken …
+    ///
+    /// Die Scrollposition lässt sich so nicht halten: Versuche, die oberste
+    /// sichtbare Zeile wieder nach oben zu holen (ScrollIntoView über das Ende,
+    /// auch mit niedriger Dispatcher-Priorität), wurden vom DataGrid danach
+    /// wieder überschrieben (gemessen 2026-10-14). Deshalb tauscht die Prüfung
+    /// die Liste gar nicht erst aus (MainWindowViewModel.Checks.cs).
     /// </summary>
     private void CaptureGridState()
     {
-        _savedSelection = RecordsGrid.SelectedItems.OfType<RecordRow>().ToList();
+        _savedSelection = RecordsGrid.SelectedItems.OfType<RecordRow>().Select(r => r.Record.Key).ToList();
 
         _savedSort = null;
         if (_sortColumn is null || RecordsGrid.CollectionView is not { } view) return;
@@ -146,12 +157,15 @@ public partial class MainWindow : ChromeWindow, IShellServices
             _savedSort = null;
         }
 
+        var items = RecordsGrid.CollectionView?.Cast<object>().OfType<RecordRow>().ToList() ?? [];
+        var byKey = new Dictionary<string, RecordRow>(StringComparer.Ordinal);
+        foreach (var item in items) byKey.TryAdd(item.Record.Key, item);
+
         if (_savedSelection.Count > 1)
         {
-            var visible = new HashSet<RecordRow>(_viewModel?.VisibleRows ?? []);
-            foreach (var row in _savedSelection)
+            foreach (string key in _savedSelection)
             {
-                if (visible.Contains(row) && !RecordsGrid.SelectedItems.Contains(row)) RecordsGrid.SelectedItems.Add(row);
+                if (byKey.TryGetValue(key, out var row) && !RecordsGrid.SelectedItems.Contains(row)) RecordsGrid.SelectedItems.Add(row);
             }
         }
         _savedSelection = [];

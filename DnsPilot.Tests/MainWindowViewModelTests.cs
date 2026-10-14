@@ -94,6 +94,23 @@ public class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Pruefen_tauscht_die_Liste_nicht_aus_auch_bei_Nur_Auffaelligkeiten()
+    {
+        // Eine neue Liste ließ die Tabelle in der Ansicht springen (gemeldet
+        // 2026-10-14: sortiert, 10. Zeile markiert, geprüft — Ansicht weg).
+        await _vm.ReloadCommand.ExecuteAsync(null);
+        _vm.OnlyProblems = true;
+        var before = _vm.VisibleRows;
+        var row = before.First(r => r.IsUnchecked);
+        _vm.SelectedRows = [row];
+
+        await _vm.ScanSelectedCommand.ExecuteAsync(null);
+
+        _vm.VisibleRows.Should().BeSameAs(before);
+        row.IsUnchecked.Should().BeFalse("die Zeile wurde geprüft");
+    }
+
+    [Fact]
     public async Task Nur_statische_blendet_dynamische_Eintraege_aus()
     {
         await _vm.ReloadCommand.ExecuteAsync(null);

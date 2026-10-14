@@ -62,9 +62,9 @@ Analyzer an. Ausgeliefert werden nur `DnsPilot.exe` und `nlog.config`
 
 ## Aktueller Stand
 
-**v0.4.0 veröffentlicht und im Update-Ordner, 2026-10-14** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
+**v0.4.0 veröffentlicht und im Update-Ordner, 2026-10-14; 0.4.1 vorbereitet (CHANGELOG), nicht getaggt** — Erstveröffentlichung v0.1.0 am 2026-10-13 (Release mit `DnsPilot-0.1.0-win-x64.zip`,
 CI und Release-Workflow grün; das ZIP von v0.1.0 enthält noch die PDBs, ab
-v0.1.1 nicht mehr) — 326 Tests grün (Stand 0.4.0), Oberfläche per Bildschirmfoto-Modus mit
+v0.1.1 nicht mehr) — 327 Tests grün (Stand 0.4.1), Oberfläche per Bildschirmfoto-Modus mit
 Demodaten geprüft. Der DNS-Zugriff ist von WMI auf PowerShell umgestellt
 (siehe „Warum PowerShell").
 
@@ -292,9 +292,23 @@ lockert, sollte vorher mit dem Endpoint-Schutz-Team sprechen.
   `MainWindow.CaptureGridState`/`RestoreGridState`: vor dem Wechsel
   (`PropertyChanging`) die per Klick sortierte Spalte (`Sorting`-Event — Netz
   und Erreichbarkeit teilen sich einen Pfad) und die Auswahl merken, danach
-  per `Dispatcher.Post` `column.Sort(direction)` und Auswahl zurück. Per
+  per `Dispatcher.Post` `column.Sort(direction)` und Auswahl zurück. Die Auswahl
+  wird über `DnsRecord.Key` wiedergefunden — nach `SetInventory` sind es neue
+  Zeilenobjekte. (Code-Logik; am Bild nur der Prüfen-Fall belegt.) Per
   Bildschirmfoto mit Gegenprobe geprüft (ohne Fix: Grundreihenfolge, eine
   Zeile markiert).
+- **Die Scrollposition überlebt keinen `ItemsSource`-Wechsel.** Nach einer
+  neuen Liste steht die Ansicht oben; `ScrollIntoView(markiert)` setzt die
+  Zeile an den Rand — je nach vorherigem Scrollstand anderswo (gemeldet
+  2026-10-14: „Tabelle springt nach Prüfen"). Drei Versuche, die oberste
+  sichtbare Zeile zurückzuholen (ScrollIntoView übers Ende und zurück, auch
+  mit `DispatcherPriority.Background`), hat das DataGrid danach wieder
+  überschrieben; die aus den `DataGridRow`-Positionen gelesene oberste Zeile
+  war direkt nach dem Wechsel selbst widersprüchlich. Folgerung: die Liste
+  nur austauschen, wenn sich die Menge wirklich ändert. Die Prüfung filtert
+  deshalb nicht mehr neu (`MainWindowViewModel.Checks.cs`, Test
+  `Pruefen_tauscht_die_Liste_nicht_aus…`). Anlegen/Löschen/Filter springen
+  weiterhin zur markierten Zeile.
 - **ComboBox-Liste neu aufbauen:** Beim `Clear()` schreibt die ComboBox
   `null` in die gebundene Auswahl. Wer darauf sofort mit einem Ersatzwert
   reagiert, setzt ihn, während die Liste leer ist — die spätere Zuweisung

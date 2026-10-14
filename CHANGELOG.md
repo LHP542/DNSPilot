@@ -9,6 +9,15 @@ Geschrieben für die Nutzer: was ist neu, was ist behoben — keine Interna.
 Erlaubt sind Überschriften (`###`), Absätze, Aufzählungen, `**fett**`,
 `Code` und Hinweise mit `>`.
 
+## 0.4.1 — 2026-10-14
+
+### Behoben
+
+- Nach **Auswahl prüfen** sprang die Tabelle in der Ansicht, wenn *Nur
+  Auffälligkeiten* an war — je nach Scrollstand an eine andere Stelle. Die
+  Ansicht bleibt jetzt stehen. Ein Eintrag, der nach der Prüfung unauffällig
+  ist, bleibt sichtbar, bis der Filter geändert wird.
+
 ## 0.4.0 — 2026-10-14
 
 ### Ändern per Rechtsklick
